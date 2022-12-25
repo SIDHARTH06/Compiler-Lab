@@ -19,7 +19,7 @@
 
 program : expr END	{
 				FILE *target_file; 
-    			target_file = fopen("a.xsm", "ab");
+    			target_file = fopen("executablefile.xsm", "ab");
 				$$ = $2;
 				fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
                 codeGen($1,target_file);
