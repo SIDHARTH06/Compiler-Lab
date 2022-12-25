@@ -29,10 +29,10 @@ program : expr END	{
                 
 			}
 		;
-expr : expr PLUS expr		{$$ = makeOperatorNode('+',$1,$3);}
-	 | expr MINUS expr  	{$$ = makeOperatorNode('-',$1,$3);}
-	 | expr MUL expr	{$$ = makeOperatorNode('*',$1,$3);}
-	 | expr DIV expr	{$$ = makeOperatorNode('/',$1,$3);}
+expr : PLUS expr expr		{$$ = makeOperatorNode('+',$2,$3);}
+	 | MINUS expr expr  	{$$ = makeOperatorNode('-',$2,$3);}
+	 | MUL expr expr	{$$ = makeOperatorNode('*',$2,$3);}
+	 | DIV expr expr	{$$ = makeOperatorNode('/',$2,$3);}
 	 | '(' expr ')'		{$$ = $2;}
 	 | NUM			{$$ = $1;}
 	 ;
