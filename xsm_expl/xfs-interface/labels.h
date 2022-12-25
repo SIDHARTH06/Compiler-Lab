@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "constants.h"
-
+#include<ctype.h>
 typedef struct _label{
 	char *name;
 	int address;
@@ -22,5 +22,10 @@ int labels_get_target (const char *name);
 int labels_is_charstring (char *str);
 int labels_resolve (const char *filename, char *outfile, int base_address);
 void labels_random_name (char *name);
+int remove_newline_character();
+int isalpha();
+int time();
+
+
 
 #endif

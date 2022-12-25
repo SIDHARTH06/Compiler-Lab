@@ -1,9 +1,5 @@
 #include "labels.h"
 
-int remove_newline_character();
-int isalpha();
-int time();
-
 static
 label *_root;
 

@@ -1,6 +1,7 @@
 #include<string.h>
 #include "data.h"
 #include "node.h"
+#include "label.h"
 #define LEGAL 0
 
 #define PAGE_PER_INTERRUPT      2
@@ -48,3 +49,10 @@ void expandpath(char *path); // To expand environment variables in path
 
 void remfilename(char *pathname);
 node * get_namedLabel_node(node* node);
+int yyerror(char *);
+int yylex(void);
+label* label_add(const char*);
+int label_free(int);
+int file_expandPath(char *);
+int file_getOpFileName(char*, char*);
+int yyparse(void); 

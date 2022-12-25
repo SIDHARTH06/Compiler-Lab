@@ -18,14 +18,15 @@
 %%
 
 program : expr END	{
+				FILE *target_file; 
+    			target_file = fopen("a.xsm", "ab");
 				$$ = $2;
-				printf("Answer : %d\n",evaluate($1));
-                printf("prefix: \n");
-                preorder($1);
-                printf("\n");
-                printf("postfix: \n");
-                postorder($1);
-				exit(1);
+				fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
+                codeGen($1,target_file);
+				fprintf(target_file, "INT 10");
+				fclose(target_file);
+                exit(0);
+                
 			}
 		;
 

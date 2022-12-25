@@ -34,4 +34,16 @@ xfs_cli_file_gen (const char *text, int state);
 char*
 xfs_cli_int_gen (const char *text, int state);
 
+int isspace();
+int loadShellCode();
+int loadLibraryCode();
+int loadTimerCode();
+int loadIdleCode();
+int deleteFileFromDisk();
+int exportFile();
+int copyBlocksToFile();
+int dumpInodeTable();
+int dumpRootFile();
+int loadFileToVirtualDisk();
+
 #endif

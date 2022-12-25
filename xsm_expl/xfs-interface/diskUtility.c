@@ -9,9 +9,7 @@
 #include <unistd.h>
 
 #include <ctype.h>
-int _disk_init();
-int labels_reset();
-int labels_resolve();
+
 void trim(char *str)
 {
     char *start, *end;

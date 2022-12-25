@@ -4,10 +4,6 @@
 #include "label.h"
 #include "y.tab.h"
 
-int yyparse();
-int file_getOpFileName();
-int file_expandPath();
-int label_free();
 extern FILE *yyin;
 
 int out_linecount=0; //no of lines of code generated

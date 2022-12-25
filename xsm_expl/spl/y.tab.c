@@ -58,10 +58,6 @@
 /* Using locations.  */
 #define YYLSP_NEEDED 0
 
-int yyerror();
-int yyparse();
-int yylex();
-int label_add();
 
 
 /* Tokens.  */
@@ -2157,7 +2153,7 @@ yyreturn:
 
 #line 264 "splparser.y"
 
-int lablel_add();
+
 int yyerror (char *msg) 
 {
     return fprintf (stderr, "%d: %s\n",linecount,msg);

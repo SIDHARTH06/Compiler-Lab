@@ -262,7 +262,7 @@ ids:            ID                          {
                                             }
                 ;
 %%
-int lablel_add();
+
 int yyerror (char *msg) 
 {
     return fprintf (stderr, "%d: %s\n",linecount,msg);

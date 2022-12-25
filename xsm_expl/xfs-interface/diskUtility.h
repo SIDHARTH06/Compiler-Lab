@@ -46,4 +46,7 @@ int deleteDataFromDisk(char *name);
 void formatDisk(int format);
 void expandpath(char *path);
 void addext(char *filename, char *ext);
+int _disk_init();
+int labels_reset();
+int labels_resolve();
 #endif
