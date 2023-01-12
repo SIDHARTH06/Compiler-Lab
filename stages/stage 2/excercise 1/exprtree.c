@@ -6,6 +6,12 @@ struct tnode* createTree(int val, char* varname, int nodetype, struct tnode* l, 
 	temp->right = r;
 	switch(temp->nodetype) 
 	{
+		case MATHOPNODE:
+		{
+			temp->varname = malloc(1);
+			temp->varname[0] = varname[0];
+			break;
+		}
 		case VARNODE:
 		{
 			temp->varname = malloc(1);
@@ -15,12 +21,6 @@ struct tnode* createTree(int val, char* varname, int nodetype, struct tnode* l, 
 		case NUMNODE:
 		{
 			temp->val = val;
-			break;
-		}
-		case MATHOPNODE:
-		{
-			temp->varname = malloc(1);
-			temp->varname[0] = varname[0];
 			break;
 		}
 	}
