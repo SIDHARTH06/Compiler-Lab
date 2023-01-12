@@ -24,3 +24,4 @@ register_index getReg();
 register_index freeReg();
 int regs[16];
 int nooffreereg;
+void printtree(struct tnode* t);

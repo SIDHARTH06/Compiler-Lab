@@ -26,6 +26,53 @@ struct tnode* createTree(int val, char* varname, int nodetype, struct tnode* l, 
 	}
 	return temp;
 }
+void printtree(struct tnode* ast)
+{
+	if(ast==NULL)
+	{
+		return;
+	}
+	printtree(ast->left);
+	switch(ast->nodetype)
+	{
+		case NUMNODE:
+		{
+			printf("%d ",ast->val);
+			break;
+		}
+		case VARNODE:
+		{
+			printf("%c ",ast->varname[0]);
+			break;
+		}
+		case MATHOPNODE:
+		{
+			printf("%c ",ast->varname[0]);
+			break;
+		}
+		case CONNECTORNODE:
+		{
+			printf("O");
+			break;
+		}
+		case READNODE:
+		{
+			printf("R");
+			break;
+		}
+		case WRITENODE:
+		{
+			printf("W");
+			break;
+		}
+		case ASSIGNNODE:
+		{
+			printf("=");
+			break;
+		}
+	}
+	printtree(ast->right);
+}
 void inorder(struct tnode* ast)
 {
 	if(ast==NULL)

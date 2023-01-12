@@ -20,12 +20,12 @@
 %%
 
 program : BEG SLIST END{
-				//inorder($2);
+				printtree($2);
 				FILE *target_file; 
     			target_file = fopen("ASSEMBLYCODE.xsm", "wb");
 				$$ = $2;
-				fprintf(target_file, "MOV SP, %d\n", 4096+(int)('z'-'a'));
 				fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
+				fprintf(target_file, "MOV SP, %d\n", 4096+(int)('z'-'a'));
                 codeGen($2,target_file);
 				fprintf(target_file, "INT 10");
 				fclose(target_file);
