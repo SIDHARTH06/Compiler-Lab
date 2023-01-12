@@ -9,14 +9,17 @@
 %union{
 	struct tnode *no;
 }
-%type <no> expr STMNT SLIST INPUTSTMNT OUTPUTSTMNT program ID NUM
-%token READ WRITE NUM ID ENDOFLINE ASSIGN PLUS MINUS MUL DIV BEGIN ENOFLINE END OPENPARANTH CLOSEPARANTH
+
+%type <no> expr STMNT SLIST INPUTSTMNT OUTPUTSTMNT program ID NUM ASSIGNSTMNT
+%token READ WRITE NUM ID ENDOFLINE ASSIGN PLUS MINUS MUL DIV BEG ENOFLINE END
+%left PLUS MINUS
+%left MUL DIV
 
 %%
 
-program : BEGIN SLIST END{
+program : BEG SLIST END{
 				$$=$2;
-				printf("test");
+				preorder($2);
 				exit(0);
 				/*
 				FILE *target_file; 
@@ -32,24 +35,34 @@ program : BEGIN SLIST END{
                 
 			}
 		;
+	| BEG END{
+				exit(0);
+			}
+		;
 
-SLIST: STMNT SLIST		{$$ = makeConnectornode($1,$2);}
+SLIST: SLIST STMNT		{$$ = createTree(-1,NULL,CONNECTORNODE,$1,$2);}
 	 | STMNT			{$$ = $1;}
 	 ;
 STMNT: INPUTSTMNT	{$$ = $1;}
 	 | OUTPUTSTMNT	{$$ = $1;}
-	 | ID ASSIGN expr ENDOFLINE	 {$$ = makeOperatorNode($1,$3);}
-	 | expr ENDOFLINE		{$$ = $1;}
+	 | ASSIGNSTMNT	 {$$ = $1;}
 	 ;
-INPUTSTMNT : READ ID ENDOFLINE		{$$ = makeReadNode($2);}
+
+INPUTSTMNT : READ '(' ID ')' ENDOFLINE		{$$ = createTree(-1,NULL,READNODE,$3,NULL);}
 	 ;
-OUTPUTSTMNT : WRITE expr ENDOFLINE	{$$ = makeWriteNode($2);}
+
+OUTPUTSTMNT : WRITE '(' expr ')' ENDOFLINE	{$$ = createTree(-1,NULL,WRITENODE,$3,NULL);}
 	 ;
-expr : expr PLUS expr		{$$ = makeOperatorNode(PLUS,$1,$3);}
-	 | expr MINUS expr  	{$$ = makeOperatorNode(MINUS,$1,$3);}
-	 | expr MUL expr	{makeOperatorNode(MUL,$1,$3);}
-	 | expr DIV expr	{$$ = makeOperatorNode(DIV,$1,$3);}
-	 | OPENPARANTH expr CLOSEPARANTH		{$$ = $2;}
+
+ASSIGNSTMNT : ID ASSIGN expr ENDOFLINE		{$$ = createTree(-1,NULL,ASSIGNNODE,$1,$3);}
+	 ;
+
+expr : expr PLUS expr		{$$ = createTree(-1,"+",MATHOPNODE,$3,NULL);}
+	 | expr MINUS expr  	{$$ = createTree(-1,"-",MATHOPNODE,$3,NULL);}
+	 | expr MUL expr	{$$ = createTree(-1,"*",MATHOPNODE,$3,NULL);}
+	 | expr DIV expr	{$$ = createTree(-1,"/",MATHOPNODE,$3,NULL);}
+	 | '(' expr ')'		{$$ = $2;}
+	 | ID			{$$ = $1;}
 	 | NUM			{$$ = $1;}
 	 ;
 %%

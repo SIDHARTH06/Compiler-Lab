@@ -39,47 +39,75 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     READ = 258,
-     WRITE = 259,
-     NUM = 260,
-     ID = 261,
-     ENDOFLINE = 262,
-     ASSIGN = 263,
-     PLUS = 264,
-     MINUS = 265,
-     MUL = 266,
-     DIV = 267,
-     BEG = 268,
-     ENOFLINE = 269,
-     END = 270
+     NUM = 258,
+     PLUS = 259,
+     MINUS = 260,
+     MUL = 261,
+     DIV = 262,
+     ID = 263,
+     begin = 264,
+     END = 265,
+     READ = 266,
+     WRITE = 267,
+     EOL = 268,
+     IF = 269,
+     then = 270,
+     ELSE = 271,
+     endif = 272,
+     WHILE = 273,
+     DO = 274,
+     endwhile = 275,
+     GT = 276,
+     LT = 277,
+     LE = 278,
+     GE = 279,
+     NE = 280,
+     EQ = 281,
+     ASSIGN = 282,
+     BREAK = 283,
+     CONTINUE = 284
    };
 #endif
 /* Tokens.  */
-#define READ 258
-#define WRITE 259
-#define NUM 260
-#define ID 261
-#define ENDOFLINE 262
-#define ASSIGN 263
-#define PLUS 264
-#define MINUS 265
-#define MUL 266
-#define DIV 267
-#define BEG 268
-#define ENOFLINE 269
-#define END 270
+#define NUM 258
+#define PLUS 259
+#define MINUS 260
+#define MUL 261
+#define DIV 262
+#define ID 263
+#define begin 264
+#define END 265
+#define READ 266
+#define WRITE 267
+#define EOL 268
+#define IF 269
+#define then 270
+#define ELSE 271
+#define endif 272
+#define WHILE 273
+#define DO 274
+#define endwhile 275
+#define GT 276
+#define LT 277
+#define LE 278
+#define GE 279
+#define NE 280
+#define EQ 281
+#define ASSIGN 282
+#define BREAK 283
+#define CONTINUE 284
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 9 "exprtree.y"
+#line 12 "parser.y"
 {
-	struct tnode *no;
+  struct tnode* p;
 }
 /* Line 1529 of yacc.c.  */
-#line 83 "y.tab.h"
+#line 111 "y.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
