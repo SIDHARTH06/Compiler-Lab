@@ -54,10 +54,10 @@ OUTPUTSTMNT : WRITE '(' expr ')' ENDOFLINE	{$$ = createTree(-1,NULL,WRITENODE,$3
 ASSIGNSTMNT : ID ASSIGN expr ENDOFLINE		{$$ = createTree(-1,NULL,ASSIGNNODE,$1,$3);}
 	 ;
 
-expr : expr PLUS expr		{$$ = createTree(-1,"+",MATHOPNODE,$3,NULL);}
-	 | expr MINUS expr  	{$$ = createTree(-1,"-",MATHOPNODE,$3,NULL);}
-	 | expr MUL expr	{$$ = createTree(-1,"*",MATHOPNODE,$3,NULL);}
-	 | expr DIV expr	{$$ = createTree(-1,"/",MATHOPNODE,$3,NULL);}
+expr : expr PLUS expr		{$$ = createTree(-1,"+",MATHOPNODE,$1,$3);}
+	 | expr MINUS expr  	{$$ = createTree(-1,"-",MATHOPNODE,$1,$3);}
+	 | expr MUL expr	{$$ = createTree(-1,"*",MATHOPNODE,$1,$3);}
+	 | expr DIV expr	{$$ = createTree(-1,"/",MATHOPNODE,$1,$3);}
 	 | '(' expr ')'		{$$ = $2;}
 	 | ID			{$$ = $1;}
 	 | NUM			{$$ = $1;}

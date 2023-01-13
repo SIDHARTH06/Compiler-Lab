@@ -16,7 +16,7 @@ int yyerror();
 "write"	 {return WRITE;}
 [a-z]    {varname[0]=yytext[0]; yylval.no = createTree(-1,varname,VARNODE,NULL,NULL); return ID;}
 [0-9]+	{number = atoi(yytext); yylval.no = createTree(number,NULL,NUMNODE,NULL,NULL); return NUM;}
-"="	 {return ASSIGN;}
+"="	{return ASSIGN;}
 "+"	{return PLUS;}
 "-"	{return MINUS;}
 "*"	{return MUL;}

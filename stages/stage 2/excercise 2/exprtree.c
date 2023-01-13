@@ -159,7 +159,7 @@ register_index codeGen(struct tnode *t,FILE *target_file){
 		reg2=codeGen(t->right,target_file);
 		int variableposition = (int)(t->left->varname[0] - 'a') + 4096;
 		fprintf(target_file, "MOV R%d, %d\n", reg1, variableposition);
-        fprintf(target_file,"MOV [R%d], %d\n",reg1,reg2);
+        fprintf(target_file,"MOV [R%d], R%d\n",reg1,reg2);
 		freeReg();
 		freeReg();
         return -1;

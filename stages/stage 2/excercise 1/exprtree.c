@@ -30,15 +30,16 @@ void preorder(struct tnode* ast)
 {
 	if(ast == NULL)
 		return;
+	preorder(ast->left);
 	printf("%d ", ast->nodetype);
 	switch(ast->nodetype) {
 		case VARNODE:
-			printf("%s", ast->varname);
+			printf("%s ", ast->varname);
 			break;
 		case NUMNODE:
-			printf("%d",ast->val);
+			printf("%d ",ast->val);
 			break;
 	}
-	preorder(ast->left);
+	
 	preorder(ast->right);
 }
