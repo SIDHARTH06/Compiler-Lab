@@ -1,0 +1,7 @@
+load --idle /home/anonymous/OS_lab/Assignments/Stage_12/idle_ass1.xsm
+load --os /home/anonymous/OS_lab/Assignments/Stage_12/os_startup_st12_ass1.xsm
+load --int=timer /home/anonymous/OS_lab/Assignments/Stage_12/timer.xsm
+load --init /home/anonymous/OS_lab/Assignments/Stage_12/numbers1_100.xsm
+load --library /home/anonymous/OS_lab/myexpos/expl/library.lib
+load --int=10  /home/anonymous/OS_lab/myexpos/spl/spl_progs/halt_prog.xsm
+load --int=7 /home/anonymous/OS_lab/Assignments/Stage_10/sample_int7.xsm

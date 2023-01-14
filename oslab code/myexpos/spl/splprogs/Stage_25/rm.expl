@@ -1,0 +1,33 @@
+//rm shell utility (delete file)
+
+int main(){
+
+
+    decl
+        int temp;
+        str name;
+    enddecl
+
+
+    begin
+        
+        temp=exposcall("Read",-1,name);
+
+        temp=exposcall("Delete",name);
+
+        if(temp==-1) then
+            temp=exposcall("Write",-2,"PermDenied");
+        endif;
+
+        if(temp==-2) then
+            temp=exposcall("Write",-2,"FileIsOpen");
+        endif;
+
+
+
+        return 0;
+    end
+
+
+
+}

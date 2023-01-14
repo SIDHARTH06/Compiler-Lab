@@ -1,0 +1,58 @@
+int main(){
+
+
+    decl
+        int fileDesc,temp,num;
+        str name,data;
+    enddecl
+
+
+
+    begin
+
+        temp=exposcall("Write",-2,"Enter name");
+        temp=exposcall("Read",-1,name);
+
+        fileDesc=exposcall("Open",name);
+
+        temp=exposcall("Seek",fileDesc,9999);      //To place the lseek to End of file
+
+        num=2000;
+
+        while(num<=2513) do
+            temp=exposcall("Write",fileDesc,num);
+            num=num+1;
+        endwhile;
+
+        temp=exposcall("Seek",fileDesc,-1);
+
+        while(1==1) do
+
+            if(temp==-2) then
+                break;
+            endif;
+
+
+            temp=exposcall("Read",fileDesc,data);
+
+
+
+            temp=exposcall("Write",-2,data);
+            temp=exposcall("Seek",fileDesc,-2);
+
+        endwhile;
+
+
+
+
+        return 0;
+
+
+
+
+    end
+
+
+
+
+}

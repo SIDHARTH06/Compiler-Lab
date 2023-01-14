@@ -1,0 +1,87 @@
+//Memory Manager Module (mod 2)
+
+alias functionNum R1;
+
+//Get Free Page Function
+if(functionNum==1) then
+
+    //Increment WAIT_MEM_COUNT field in the system status table
+    [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]+1;
+
+    while([SYSTEM_STATUS_TABLE+2]==0) do
+        alias currentPID R2;
+        currentPID=[SYSTEM_STATUS_TABLE+1];
+        //Set the state of the invoked process as WAIT_MEM.
+        [PROCESS_TABLE+(PT_ENTRY_SIZE*currentPID)+4]=WAIT_MEM;
+
+        //Call Scheduler Module
+        multipush(R1,R2);
+        call MOD_5;
+        multipop(R1,R2);
+    endwhile;
+
+    //Decrement the WAIT_MEM_COUNT field in System status Table
+    [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]-1;
+
+    //Decrement MEM_FREE_COUNT field in System Status field
+    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
+
+
+    //Find a free page using memory free list
+    alias free R0;
+
+    free=0;
+
+    while(free<MAX_MEM_PAGE && [MEMORY_FREE_LIST+free]!=0) do
+        free=free+1;
+    endwhile;
+
+    //Set the entry of the page in memory free list as 1
+    [MEMORY_FREE_LIST+free]=1;
+
+
+
+    return;
+endif;
+
+
+//Release Page function
+if(functionNum==2) then
+
+    
+    alias PageNo R2;
+    //Decrement the  entry coresponding to PageNo in memory free list
+    [MEMORY_FREE_LIST+PageNo]=[MEMORY_FREE_LIST+PageNo]-1;
+
+    // If that entry becomes zero Then the page is free so Increment MEM_FREE_COUNT in SST.
+    if([MEMORY_FREE_LIST+PageNo]==0) then
+        [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]+1;
+    endif;
+
+
+    alias loop R3;
+    loop=0;
+
+    //Update the STATUS to READY for all processes (with valid PID) which have STATUS as WAIT_MEM.
+    while(loop<MAX_PROC_NUM) do
+
+        if([PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]==WAIT_MEM) then
+            [PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]=READY;
+        endif;
+
+        loop=loop+1;
+    endwhile;
+
+   
+
+    return;
+
+endif;
+
+
+
+    
+
+
+
+

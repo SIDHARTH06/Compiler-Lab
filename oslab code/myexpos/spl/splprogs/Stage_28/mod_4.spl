@@ -1,0 +1,175 @@
+//Device Manager module
+
+//Function number and current PID are stored in registers R1 and R2.
+alias functionNum R1;
+alias currentPID R2;
+
+
+if(functionNum==3)then   //Checking whether it is terminal write function
+
+alias word R3; //Word is stored in R3
+
+//Calling Acquire Terminal
+multipush(R1,R2,R3);       //Saving Register Context before module Call
+R1=8;                   //Function number 8 for Acquire Terminal
+//R2 already contains the PID, so need to assign it as of now.
+call MOD_0;             //Calling Resource Manager Module
+//Ignore the value present in R0 as Acquire Terminal does not have any return value.
+multipop(R1,R2,R3);        //Restoring Register Context
+
+
+print word;
+
+
+//Calling Release Terminal
+multipush(R1,R2,R3);       //Saving Register Context before module Call
+R1=9;                       //Function number 9 for Release terminal
+//R2 already contains the PID, so need to assign it as of now.
+call MOD_0;                //Calling Resource Manager Module
+//Return value will be stored in R0 by module 0. Save this return value in any other register if needed.(I have not stored)
+multipop(R1,R2,R3);        //Restoring Register Context
+
+return;
+
+endif;
+
+
+if(functionNum==4)then  //Checking whether it is terminal read function
+
+alias logicalAddr R3;    //Logical address of word
+
+multipush(R1,R2,R3); //Saving register Context
+R1=8; //Function number for acquire terminal
+//R2 already contains the PID, so need to assign it as of now.
+call MOD_0;             //Calling Resource Manager Module
+multipop(R1,R2,R3);
+
+read;                          //Use read statement, for requesting to read from the terminal
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE +5*CORE+1]*16+4]=WAIT_TERMINAL;    //Change the state of the current process to WAIT_TERMINAL.
+
+//Invoking scheduler
+
+multipush(R1,R2,R3);
+
+R1=RELEASE_LOCK;
+R2=KERN_LOCK;
+call ACCESS_CONTROL;
+
+
+call MOD_5;
+
+R1=ACQUIRE_KERN_LOCK;
+call ACCESS_CONTROL;
+
+
+multipop(R1,R2,R3); //Restoring Context
+
+alias physicalAddr R4;
+
+physicalAddr=([PTBR+2*(logicalAddr/512)]*512)+(logicalAddr%512);
+
+[physicalAddr]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE +5*CORE+1]*16+8];        //Store the value present in input buffer field of process table to physical address location
+
+return;
+
+endif;
+
+
+alias PageNo R3;
+alias BlockNo R4;
+
+
+//Disk Load Function
+if(functionNum==2) then
+
+    //Call acquire disk in resource manager module (module 0)
+    multipush(R1,R2,R3,R4);
+    R1=3;   //Acquire Disk is function number 3
+    //R2 already contains the PID
+    call MOD_0;
+    multipop(R1,R2,R3,R4);
+
+    //Reset the LOAD/STORE BIT
+    [DISK_STATUS_TABLE+1]=0;
+
+    //set PAGE Number
+    [DISK_STATUS_TABLE+2]=PageNo;
+
+    //set Block Number
+    [DISK_STATUS_TABLE+3]=BlockNo;
+
+
+    //Issue the Load statement
+    load(PageNo,BlockNo);
+
+    //Set the state of the process (with given PID) to WAIT_DISK 
+    [PROCESS_TABLE+(PT_ENTRY_SIZE*currentPID)+4]=WAIT_DISK;
+
+    //invoke the scheduler
+    multipush(R1,R2,R3,R4);
+    R1=RELEASE_LOCK;
+    R2=KERN_LOCK;
+    call ACCESS_CONTROL;
+
+
+    call MOD_5;
+
+    R1=ACQUIRE_KERN_LOCK;
+    call ACCESS_CONTROL;
+    multipop(R1,R2,R3,R4);
+
+    return;
+endif;
+
+
+//Disk Store Function
+if(functionNum==1) then
+
+    alias pageNumber R3;
+    alias blockNumber R4;
+
+    //Acquire the lock on the disk device by calling the Acquire_Disk() function in the Resource Manager module;
+    multipush(R1,R2,R3,R4);
+    R1=3;   //Acquire Disk
+    //R2 already has the current pid
+    call MOD_0;     //Resource Manager module
+    multipop(R1,R2,R3,R4);
+
+
+    //Set the LOAD/STORE BIT, PAGE NUMBER and BLOCK NUMBER in the Disk Status Table.
+    [DISK_STATUS_TABLE+1]=1;    //LOAD/STORE bit (1 indicating STORE)
+    [DISK_STATUS_TABLE+2]=pageNumber;   //pageNumber
+    [DISK_STATUS_TABLE+3]=blockNumber;  //blockNumber
+
+
+
+    //Use the Store statement to Store the memory page to disk;
+    store(pageNumber,blockNumber);
+
+
+    // Set the state as (WAIT_DISK, - );
+    [PROCESS_TABLE+(PT_ENTRY_SIZE*currentPID)+4]=WAIT_DISK;
+
+
+    
+
+
+    R1=RELEASE_LOCK;
+    R2=KERN_LOCK;
+    call ACCESS_CONTROL;
+
+
+    call MOD_5;
+
+    R1=ACQUIRE_KERN_LOCK;
+    call ACCESS_CONTROL;
+    return;
+
+endif;
+
+
+
+
+
+
+

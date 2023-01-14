@@ -1,0 +1,162 @@
+//Memory Manager Module (mod 2)
+
+alias functionNum R1;
+
+//Get Free Page Function
+if(functionNum==1) then
+
+    //Increment WAIT_MEM_COUNT field in the system status table
+    [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]+1;
+
+    while([SYSTEM_STATUS_TABLE+2]==0) do
+        alias currentPID R2;
+        currentPID=[SYSTEM_STATUS_TABLE+1];
+        //Set the state of the invoked process as WAIT_MEM.
+        [PROCESS_TABLE+(PT_ENTRY_SIZE*currentPID)+4]=WAIT_MEM;
+
+        //Call Scheduler Module
+        multipush(R1,R2);
+        call MOD_5;
+        multipop(R1,R2);
+    endwhile;
+
+    //Decrement the WAIT_MEM_COUNT field in System status Table
+    [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]-1;
+
+    //Decrement MEM_FREE_COUNT field in System Status field
+    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
+
+
+    //Find a free page using memory free list
+    alias free R0;
+
+    free=0;
+
+    while(free<MAX_MEM_PAGE && [MEMORY_FREE_LIST+free]!=0) do
+        free=free+1;
+    endwhile;
+
+    //Set the entry of the page in memory free list as 1
+    [MEMORY_FREE_LIST+free]=1;
+
+
+
+    return;
+endif;
+
+
+//Release Page function
+if(functionNum==2) then
+
+    
+    alias PageNo R2;
+    //Decrement the  entry coresponding to PageNo in memory free list
+    [MEMORY_FREE_LIST+PageNo]=[MEMORY_FREE_LIST+PageNo]-1;
+
+    // If that entry becomes zero Then the page is free so Increment MEM_FREE_COUNT in SST.
+    if([MEMORY_FREE_LIST+PageNo]==0) then
+        [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]+1;
+    endif;
+
+
+    alias loop R3;
+    loop=0;
+
+    //Update the STATUS to READY for all processes (with valid PID) which have STATUS as WAIT_MEM.
+    while(loop<MAX_PROC_NUM) do
+
+        if([PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]==WAIT_MEM) then
+            [PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]=READY;
+        endif;
+
+        loop=loop+1;
+    endwhile;
+
+   
+
+    return;
+
+endif;
+
+
+//Get Code Page Function
+if(functionNum==5) then
+
+    alias blockNum R2;
+
+    alias pid R3;
+    alias loop R4;
+
+    pid=0;
+
+    //Check the disk map table entries of all the processes, if the given block number is present in any entry and the corresponding page table entry is valid then return the memory page number. 
+
+    while(pid<MAX_PROC_NUM) do      //Looping through each process
+
+        loop=0;
+        while(loop<4) do     //Looping through each code page of the process   
+            if([DISK_MAP_TABLE+(pid*10)+4+loop]==blockNum && [PTBR+8+(2*loop)]!=-1) then
+                R0=[PTBR+8+(2*loop)];          //Setting Return Value as Page Number
+                [MEMORY_FREE_LIST+R0]=[MEMORY_FREE_LIST+R0]+1;      //Incrementing memefory free list entry for that page
+                return;
+            endif;
+
+            loop=loop+1;
+        endwhile;
+
+        pid=pid+1;
+    endwhile;
+
+
+    //If code page is not in memory,invoke Get Free Page in memory manager module (MOD_2, this same module)
+    multipush(R1,R2,R3,R4);
+    R1=1;  //Function number 1
+    call MOD_2;
+    
+    multipop(R1,R2,R3,R4);
+
+    alias freePage R5;
+    freePage=R0;
+
+    
+
+    //Load disk block to memory using disk Load function in Device Manager module
+    multipush(R1,R2,R3,R4,R5);
+    R1=2; //Function number 2 for disk Load
+    R4=blockNum;   //Assigning R4 before R2 because blockNum is stored in R2
+    R2=[SYSTEM_STATUS_TABLE+1];  //PID of current Process
+    R3=freePage;   //Free Page where the code is to be loaded
+    call MOD_4; //Calling device manager module
+    multipop(R1,R2,R3,R4,R5);
+
+    //Set the Return value to the new Memory page to which the code is loaded
+    R0=freePage;
+
+    
+
+    return;
+
+
+endif;
+
+
+
+//Release block function
+if(functionNum==4) then
+  
+    alias blockNum R2;
+    alias pid R3;
+
+    //Decrement the count of the disk block number in the memory copy of the Disk Free List.
+    [DISK_FREE_LIST+blockNum]=[DISK_FREE_LIST+blockNum]-1;
+
+    return;
+    
+endif;
+
+
+    
+
+
+
+

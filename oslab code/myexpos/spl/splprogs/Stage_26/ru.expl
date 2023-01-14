@@ -1,0 +1,41 @@
+//Deletes all the data files owned by the user with name username.
+
+int main(){
+
+    decl
+        int temp,fileDesc;
+        str username,fileUsr,data;
+    enddecl
+
+    begin
+
+        fileDesc=exposcall("Open","root");
+        temp=exposcall("Read",-1,username);
+
+        while(1==1) do
+
+            temp=exposcall("Read",fileDesc,data);
+
+            if(temp==-2) then
+                break;
+            endif;
+
+           
+            if(data!="-1") then
+                temp=exposcall("Seek",fileDesc,2);
+                temp=exposcall("Read",fileDesc,fileUsr);
+                if(fileUsr==username) then
+                    temp=exposcall("Delete",data);
+                endif;
+                temp=exposcall("Seek",fileDesc,-3);
+            endif;
+
+            temp=exposcall("Seek",fileDesc,7);      //Offset of 7 because root file has 8 attributes (increment of one is already done )
+
+
+        endwhile;
+
+        return 0;
+
+    end
+}

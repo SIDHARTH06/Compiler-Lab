@@ -1,0 +1,27 @@
+//Exit System Call - (INT 10)
+
+//Set the MODE FLAG field in the process table to the system call number which is 10 for exit system call
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 10;
+
+// //Save the value of register SP as userSP
+// alias userSP R1;
+// userSP=SP;
+
+// //Save the value of SP in the user SP field of Process Table entry of the process.
+// [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13]=userSP;
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]*512)-1;
+
+
+//Invoke the exit_process function from the Process Manager module.
+
+R1=3;  //Function number for exit process
+R2=[SYSTEM_STATUS_TABLE + 1];  //Current pid
+call MOD_1;     //Process Manager module
+
+call MOD_5; //Invoking Scheduler Module
+
+//No Ireturn (As process has exited)
+
+

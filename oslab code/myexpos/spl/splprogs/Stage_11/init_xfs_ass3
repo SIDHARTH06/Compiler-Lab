@@ -1,0 +1,5 @@
+load --init /home/anonymous/OS_lab/Assignments/Stage_11/numbers.xsm
+load --library /home/anonymous/OS_lab/Assignments/Stage_11/write_library.lib
+load --os  /home/anonymous/OS_lab/Assignments/Stage_10/os_startup_st10.xsm
+load --int=10  /home/anonymous/OS_lab/myexpos/spl/spl_progs/halt_prog.xsm
+load --int=7 /home/anonymous/OS_lab/Assignments/Stage_10/sample_int7.xsm

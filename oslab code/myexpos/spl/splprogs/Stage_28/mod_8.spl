@@ -1,0 +1,68 @@
+//Access Control Module (MOD_8)
+
+alias functionNum R1;
+
+if(functionNum==ACQUIRE_KERN_LOCK) then
+
+    if(CORE==SECONDARY_CORE) then
+
+        //If paging or logout status is on
+        if([SYSTEM_STATUS_TABLE+5]==1 || [SYSTEM_STATUS_TABLE+7]==1) then
+
+            // eXpOS design does not permit a process to execute critical code on the secondary core when paging or logout is ongoing.
+            // Set the state of current process to READY
+            [PROCESS_TABLE+([SYSTEM_STATUS_TABLE+6]*PT_ENTRY_SIZE)+4]=READY;
+            //Call Scheduler
+            call SCHEDULER;
+           
+
+
+        endif;
+
+
+    endif;
+
+
+    while(tsl(KERN_LOCK)==1) do
+        continue;
+    endwhile;
+
+
+    return;
+
+
+endif;
+
+
+if(functionNum==ACQUIRE_SCHED_LOCK) then
+
+    while(tsl(SCHED_LOCK)==1) do
+        continue;
+    endwhile;
+
+    return;
+
+endif;
+
+
+
+if(functionNum==ACQUIRE_GLOCK) then
+
+    while(tsl(GLOCK)==1)do
+        continue;
+    endwhile;
+
+
+    return;
+
+
+endif;
+
+
+if(functionNum==RELEASE_LOCK) then
+
+    alias LockVarAddress R2;
+    [LockVarAddress]=0;
+    return;
+
+endif;

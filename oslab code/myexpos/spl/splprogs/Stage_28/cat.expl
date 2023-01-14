@@ -1,0 +1,61 @@
+//cat - Read from a file
+int main(){
+    
+    decl
+        str file,data;
+        int temp,fileDesc;
+    enddecl
+
+
+    begin
+
+        
+        temp=exposcall("Read",-1,file);
+
+        fileDesc=exposcall("Open",file);
+
+        if(fileDesc==-1) then
+            temp=exposcall("Write",-2,"NotFound OR");
+            temp=exposcall("Write",-2,"NotData/Root");
+            
+        endif;
+
+        if(fileDesc==-2) then
+            temp=exposcall("Write",-2,"SysMaxFileLimit");
+            
+        endif;
+
+        if(fileDesc==-3) then
+            temp=exposcall("Write",-2,"ProcMaxLimit");
+            
+        endif;
+
+
+        if(fileDesc>=0) then
+            while(1==1) do
+                temp=exposcall("Read",fileDesc,data);
+
+                if(temp==-2) then
+                    break;
+                endif;
+
+                temp=exposcall("Write",-2,data);
+            endwhile;
+
+
+
+            temp=exposcall("Close",fileDesc);
+            
+        endif;
+
+
+        return 0;
+
+
+
+    end
+
+
+
+
+}

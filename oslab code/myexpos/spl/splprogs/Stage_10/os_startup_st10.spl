@@ -1,0 +1,110 @@
+//Load INIT program to memory
+loadi(65,7);
+loadi(66,8);
+
+
+
+//Load Timer Interrupt routine from disk blocks 17 and 18 to memory pages 4 and 5
+
+loadi(4,17);
+loadi(5,18);
+
+
+
+
+
+
+//Load INT10 module from disk to memory
+
+loadi(22,35);
+loadi(23,36);
+
+
+
+//Load exception handler routine from disk to memory
+
+loadi(2, 15);
+loadi(3, 16);
+
+
+
+//Load Library Code from disk to memory
+
+loadi(63,13);
+loadi(64,14);
+
+
+
+//Load INT 7 from disk to memory.
+loadi(16,29);
+loadi(17,30);
+
+
+
+
+//Set the User Area page number in the Process Table entry of the current process.
+[PROCESS_TABLE + 11] = 80;
+
+
+
+//As we are using the first Process Table entry, the PID will be 0. eXpOS kernel is expected to store the PID in the PID field of the process table.
+[PROCESS_TABLE + 1] = 0;
+
+
+//The second field of System Status table must be set to the PID of the process which is going to be run in user mode
+[SYSTEM_STATUS_TABLE + 1] = 0;
+
+
+
+
+
+
+//Setting up Page tables
+
+PTBR = PAGE_TABLE_BASE;
+
+
+
+
+
+//Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+//Heap
+[PTBR+4] = 78;
+[PTBR+5] = "0110";
+[PTBR+6] = 79;
+[PTBR+7] = "0110";
+
+//Code, The code segment consists of four pages
+[PTBR+8] = 65;
+[PTBR+9] = "0100";
+[PTBR+10] = 66;
+[PTBR+11] = "0100";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+//Stack
+[PTBR+16] = 76;
+[PTBR+17] = "0110";
+[PTBR+18] = 77;
+[PTBR+19] = "0110";
+
+
+
+//Since the total address space of a process is 10 pages, PTLR register must be set to value 10.
+PTLR = 10;
+
+
+SP=8*512;  // Setting the logical address for the Stack (Pages 8 & 9 are for the stack)
+
+[76*512] = [65 * 512 + 1];  // Storing the entry point of the code to the top of the stack
+
+
+ireturn;
+

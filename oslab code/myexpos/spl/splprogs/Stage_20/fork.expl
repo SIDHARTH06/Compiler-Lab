@@ -1,0 +1,29 @@
+int main(){
+
+    decl
+        int temp;
+    enddecl
+
+
+    begin
+
+        temp=exposcall("Fork");
+
+        if(temp==0) then        //Checking whether it is child process
+            temp=exposcall("Exec","odd.xsm");
+        else
+            temp=exposcall("Exec","even_num.xsm");
+        endif;
+
+        // temp=exposcall("Write",-2,temp);
+
+
+        return 0;
+    
+    end
+
+
+
+
+
+}

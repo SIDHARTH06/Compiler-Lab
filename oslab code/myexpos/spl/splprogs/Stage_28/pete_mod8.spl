@@ -1,0 +1,140 @@
+//Access Control Module (MOD_8)
+
+
+//Use  space in Access Lock Table 
+
+
+
+
+define SCHED_TURN 29576;
+define KERN_TURN  29577;
+
+define SCHED_FLAG_PRIMARY 29578;
+define SCHED_FLAG_SECONDARY 29579;
+
+define KERN_FLAG_PRIMARY 29580;
+define KERN_FLAG_SECONDARY 29581;
+
+
+
+alias functionNum R1;
+
+
+
+
+
+if(functionNum==ACQUIRE_KERN_LOCK) then
+
+    if(CORE==SECONDARY_CORE) then
+
+        //If paging or logout status is on
+        if([SYSTEM_STATUS_TABLE+5]==1 || [SYSTEM_STATUS_TABLE+7]==1) then
+
+            // eXpOS design does not permit a process to execute critical code on the secondary core when paging or logout is ongoing.
+            // Set the state of current process to READY
+            [PROCESS_TABLE+([SYSTEM_STATUS_TABLE+6]*PT_ENTRY_SIZE)+4]=READY;
+            //Call Scheduler
+            call SCHEDULER;
+           
+
+
+        endif;
+
+
+    endif;
+
+
+    if(CORE==PRIMARY_CORE) then
+        
+        [KERN_FLAG_PRIMARY]=1;
+        [KERN_TURN]=SECONDARY_CORE;
+        while([KERN_FLAG_SECONDARY]==1 && [KERN_TURN]==SECONDARY_CORE)do
+            continue;                               //Just to avoid error
+        endwhile;
+    else
+        
+        [KERN_FLAG_SECONDARY]=1;
+        [KERN_TURN]=PRIMARY_CORE;
+        while([KERN_FLAG_PRIMARY]==1 && [KERN_TURN]==PRIMARY_CORE)do
+            continue;
+        endwhile;
+
+    endif;
+    
+
+
+    return;
+
+
+endif;
+
+
+if(functionNum==ACQUIRE_SCHED_LOCK) then
+
+    if(CORE==PRIMARY_CORE) then
+        
+        [SCHED_FLAG_PRIMARY]=1;
+        [SCHED_TURN]=SECONDARY_CORE;
+        while([SCHED_FLAG_SECONDARY]==1 && [SCHED_TURN]==SECONDARY_CORE)do
+            continue;
+        endwhile;
+    else
+        
+        [SCHED_FLAG_SECONDARY]=1;
+        [SCHED_TURN]=PRIMARY_CORE;
+        while([SCHED_FLAG_PRIMARY]==1 && [SCHED_TURN]==PRIMARY_CORE)do
+            continue;
+        endwhile;
+
+    endif;
+
+    return;
+
+endif;
+
+
+
+if(functionNum==ACQUIRE_GLOCK) then
+
+    while(tsl(GLOCK)==1)do
+        continue;
+    endwhile;
+
+
+    return;
+
+endif;
+
+
+if(functionNum==RELEASE_LOCK) then
+
+    alias LockVarAddress R2;
+    
+    if(LockVarAddress==KERN_LOCK)then
+
+        if(CORE==PRIMARY_CORE)then
+            [KERN_FLAG_PRIMARY]=0;
+        else
+            [KERN_FLAG_SECONDARY]=0;
+        endif;
+    
+
+    endif;
+
+    if(LockVarAddress==SCHED_LOCK)then
+
+        if(CORE==PRIMARY_CORE)then
+            [SCHED_FLAG_PRIMARY]=0;
+        else
+            [SCHED_FLAG_SECONDARY]=0;
+        endif;
+    
+
+    endif;
+
+
+
+
+    return;
+
+endif;

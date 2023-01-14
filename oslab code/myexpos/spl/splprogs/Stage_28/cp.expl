@@ -1,0 +1,61 @@
+//cp shell utility (copy files to another files)
+//cp.xsm filename1 filename2
+
+int main(){
+
+
+    decl
+        int temp,file1desc,file2desc;
+        str filename1,filename2,data;
+    enddecl
+
+
+    begin
+
+        temp=exposcall("Read",-1,filename1);
+        temp=exposcall("Read",-1,filename2);
+
+
+        file1desc=exposcall("Open",filename1);
+
+        if(file1desc==-1) then
+            temp=exposcall("Write",-2,"NotFound OR");
+            temp=exposcall("Write",-2,"NotData/Root");
+            
+        endif;
+
+    
+        
+
+        if(file1desc>=0) then
+
+            temp=exposcall("Create",filename2,1);   //File is set to open access
+
+            file2desc=exposcall("Open",filename2);
+
+            while(1==1) do
+                temp=exposcall("Read",file1desc,data);
+
+                if(temp==-2) then
+                    break;
+                endif;
+
+                temp=exposcall("Write",file2desc,data);
+            endwhile;
+
+
+            temp=exposcall("Close",file1desc);
+            temp=exposcall("Close",file2desc);
+
+        endif;
+
+        return 0;
+
+
+
+    end
+
+
+
+
+}

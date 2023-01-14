@@ -1,0 +1,21 @@
+::::::::::::::::::Stage 2:::::::::::::::::::::::::
+
+1. Each word in XFS is 16 characters long.
+
+2. First 69 blocks (0-68) in XFS is reserved.
+
+3. XSM machine disk is a sequence of 512 blocks, each capable of holding 512 words.
+
+4. Inode table is stored in disk blocks 3 and 4.
+
+5. The Inode table occupies only the first 960 words (60 entries, each of size 16 words) in the disk blocks 3 and 4. User table occupies the next 32 words (16 entries, each of size 2 words) and the last 32 words are reserved for future use.
+
+6. The inode table consists of only 60 entries because, this version of eXpos sets MAX_FILE_NUM=60.
+
+7.The current version of eXpos limits max num of blocks in an eXpFS file to MAX_FILE_BLOCKS=4
+
+8.The root file is present in the Block 5 of XFS disk.
+
+9. The XSM disk is block accessible and not word accessible.
+
+10.The Inode table is stored in the disk and has an entry for each file present in the disk 

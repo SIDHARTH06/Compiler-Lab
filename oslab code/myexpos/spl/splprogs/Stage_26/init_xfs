@@ -1,0 +1,46 @@
+load --init /home/anonymous/OS_lab/Assignments/Stage_26/login.xsm
+load --os   /home/anonymous/OS_lab/Assignments/Stage_26/os_startup.xsm
+load --module 7  /home/anonymous/OS_lab/Assignments/Stage_26/boot_module.xsm
+load --int=10  /home/anonymous/OS_lab/Assignments/Stage_20/int_10.xsm
+load --module 5 /home/anonymous/OS_lab/Assignments/Stage_20/mod_5.xsm
+load --int=timer  /home/anonymous/OS_lab/Assignments/Stage_14/timer.xsm
+load --idle /home/anonymous/OS_lab/Assignments/Stage_12/idle.xsm
+load --library /home/anonymous/OS_lab/myexpos/expl/library.lib
+load --module 0 /home/anonymous/OS_lab/Assignments/Stage_24/mod_0.xsm
+load --module 4 /home/anonymous/OS_lab/Assignments/Stage_23/mod_4.xsm
+load --int=7 /home/anonymous/OS_lab/Assignments/Stage_25/int7.xsm
+load --int=console /home/anonymous/OS_lab/Assignments/Stage_20/console_int.xsm
+load --int=6 /home/anonymous/OS_lab/Assignments/Stage_24/int6.xsm
+load --int=9  /home/anonymous/OS_lab/Assignments/Stage_19/int9.xsm
+load --module 1 /home/anonymous/OS_lab/Assignments/Stage_25/mod_1.xsm
+load --module 2 /home/anonymous/OS_lab/Assignments/Stage_25/mod_2.xsm
+load --int=disk /home/anonymous/OS_lab/Assignments/Stage_19/disk_int.xsm
+load --exhandler  /home/anonymous/OS_lab/Assignments/Stage_20/ex_handler.xsm
+load --int=8  /home/anonymous/OS_lab/Assignments/Stage_24/int8.xsm
+load --int=11 /home/anonymous/OS_lab/Assignments/Stage_21/int_11.xsm
+load --int=15 /home/anonymous/OS_lab/Assignments/Stage_26/int_15.xsm
+load --int=13  /home/anonymous/OS_lab/Assignments/Stage_22/int_13.xsm
+load --int=14   /home/anonymous/OS_lab/Assignments/Stage_22/int_14.xsm
+load --int=4    /home/anonymous/OS_lab/Assignments/Stage_23/int4.xsm
+load --int=5    /home/anonymous/OS_lab/Assignments/Stage_25/int5.xsm
+load --module 3   /home/anonymous/OS_lab/Assignments/Stage_25/mod_3.xsm
+load --int=12   /home/anonymous/OS_lab/Assignments/Stage_26/int12.xsm
+load --int=16   /home/anonymous/OS_lab/Assignments/Stage_26/int16.xsm
+load --int=17   /home/anonymous/OS_lab/Assignments/Stage_26/int17.xsm
+load --shell    /home/anonymous/OS_lab/Assignments/Stage_26/shell.xsm
+rm ls.xsm
+load --exec     /home/anonymous/OS_lab/Assignments/Stage_25/ls.xsm
+rm rm.xsm
+load --exec     /home/anonymous/OS_lab/Assignments/Stage_25/rm.xsm
+rm numbers.dat
+load --data  /home/anonymous/OS_lab/Assignments/Stage_24/numbers.dat
+rm cp.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_25/cp.xsm
+rm cat.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_25/cat.xsm
+rm lu.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_26/lu.xsm
+rm ru.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_26/ru.xsm
+dump --inodeusertable
+dump --rootfile

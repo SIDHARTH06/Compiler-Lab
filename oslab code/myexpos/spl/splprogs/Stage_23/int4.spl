@@ -1,0 +1,320 @@
+//INT 4 - Create, Delete
+
+alias sysCall R1;
+alias userSP R2;
+
+//Storing userSP
+userSP=SP;
+
+//Extracting  System Call number from user stack
+sysCall=[([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+
+alias processTableEntry R10;
+processTableEntry=PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * PT_ENTRY_SIZE) ;
+
+
+alias returnValueAddr R11;
+returnValueAddr=([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[processTableEntry + 13]=SP;
+
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([processTableEntry + 11]*512)-1;
+
+//Getting the fileName (Argument 1)
+alias fileName R3;
+fileName=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+
+
+
+//Checking whether it is Create System Call
+if(sysCall==1) then
+
+    //Set the MODE FLAG field in the process table to the system call number which is 1 for Create system call
+    [processTableEntry + 9] = 1;
+
+
+    //Check whether the file is present already by checking inode table
+    alias loop R4;
+    loop=0;
+    //If the file is present in the system, Return 0. 
+    while(loop<MAX_FILE_NUM) do
+
+        if([INODE_TABLE+(loop*16)+1]==fileName) then
+            //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+            [processTableEntry + 9] = 0;
+
+            //Set 0 as Return Value in the user stack. (Address Translation required)
+            [returnValueAddr] =0;
+
+            //Switch to user stack
+            SP=[processTableEntry + 13];
+
+            ireturn;
+
+            
+        endif;
+        loop=loop+1;
+    endwhile;
+
+
+    //Find the index of a free entry in inode table (-1 in filename)
+    alias index R5;
+    index=0;
+    while(index<MAX_FILE_NUM) do
+        if([INODE_TABLE+(index*16)+1]==-1) then 
+            break;
+        endif;
+        index=index+1;
+    endwhile;
+
+
+
+    //If no free entry found, Return -1.
+    if(index==MAX_FILE_NUM) then
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] = -1;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+
+    endif;
+
+    alias inodeTableEntry R8;
+    inodeTableEntry=INODE_TABLE+(index*16);
+
+    //In the inode table entry set FILE NAME to the given file name, FILE SIZE to 0 and FILE TYPE to DATA
+    [inodeTableEntry]=DATA;              //Type
+    [inodeTableEntry+1]=fileName;        //name
+    [inodeTableEntry+2]=0;               //size
+    
+    //set the block numbers to -1.
+    [inodeTableEntry+8]=-1;
+    [inodeTableEntry+9]=-1;
+    [inodeTableEntry+10]=-1;
+    [inodeTableEntry+11]=-1;
+
+
+    //Set the USER ID to the USERID of the process
+    alias userId R6;
+    userId=[processTableEntry+3];
+    [inodeTableEntry+3]=userId;
+
+    //Getting the permission value (argument 2)
+    alias permission R7;
+    permission=[([PTBR + 2 * ((userSP - 3) / 512)] * 512) + ((userSP - 3) % 512)];
+
+    //Set the PERMISSION to the permission supplied as input.
+    [inodeTableEntry+4]=permission;
+
+
+    alias rootFileEntry R9;
+    rootFileEntry=ROOT_FILE+(index*8);
+
+    //In the Root file entry corresponding to the Inode Table index, set the FILE NAME, FILE SIZE, FILE TYPE, USERNAME and PERMISSION fields.
+    [rootFileEntry]=fileName;         //name
+    [rootFileEntry+1]=0;              //size
+    [rootFileEntry+2]=DATA;           //Type
+    [rootFileEntry+3]=[USER_TABLE+(userId*2)];      //USERNAME (from user Table)
+    [rootFileEntry+4]=permission;     //permission
+
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [processTableEntry + 9] = 0;
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    //Set 0 as Return Value in the user stack. (Address Translation required)
+    [returnValueAddr] = 0; 
+
+    ireturn;
+
+
+
+endif;
+
+
+//Checking whether it is the Delete system Call
+if(sysCall==4) then
+
+    //Set the MODE FLAG field in the process table to the system call number which is 4 for Delete system call
+    [processTableEntry + 9] = 4;
+
+
+    //Find index of the file in the Inode Table
+    alias index R4;
+    index=0;
+
+    while(index<MAX_FILE_NUM && [INODE_TABLE+(index*16)+1]!=fileName ) do
+        index=index+1;
+    endwhile;
+
+
+    //If file is not present in the Inode Table, Return 0. 
+    if(index==MAX_FILE_NUM) then
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set 0 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] =0;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+
+    endif;
+
+
+
+    //If the file is not a DATA file, Return -1.
+    if([INODE_TABLE+(index*16)]!=DATA) then
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] = -1;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+    endif;
+
+
+    alias userId R5;
+    userId=[processTableEntry+3];
+
+
+    //If exclusive permission is set and current user is not root and current user is not the owner of the file Then Return -1
+    if([INODE_TABLE+(index*16)+4]==EXCLUSIVE) then
+
+        if(userId!=ROOT && [INODE_TABLE+(index*16)+3]!=userId) then
+
+            //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+            [processTableEntry + 9] = 0;
+
+            //Set -1 as Return Value in the user stack. (Address Translation required)
+            [returnValueAddr] = -1;
+
+            //Switch to user stack
+            SP=[processTableEntry + 13];
+
+            ireturn;
+        endif;
+    endif;
+
+
+    //Acquire a lock on the file by calling the acquire_inode() function in the Resource Manager module.
+    multipush(R1,R2,R3,R4,R5,R10,R11);
+    R1=4;   //Acquire Inode function number
+    R2=index;       //Inode index
+    R3=[SYSTEM_STATUS_TABLE+1];  //Current PID
+    call MOD_0;  //Resource Manager module
+    multipop(R1,R2,R3,R4,R5,R10,R11);
+
+    //Recalulating Return address
+    returnValueAddr=([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+    //Check if the the file open count is -1 in the  File Status Table . If not, release the lock and Return -2.   
+    if([FILE_STATUS_TABLE+(4*index)+1]!=-1) then
+
+        //Release lock on the file by calling the release_inode() function in the Resource Manager module.
+        multipush(R1,R2,R3,R4,R5,R10,R11);
+        R1=5;   //Release Inode function number
+        R2=index;       //Inode index
+        R3=[SYSTEM_STATUS_TABLE+1];  //Current PID
+        call MOD_0;  //Resource Manager module
+        multipop(R1,R2,R3,R4,R5,R10,R11);
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set -2 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] = -2;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+
+    endif;
+
+
+    alias loop R6;
+    loop=0;
+
+    //Looping through each disk block
+    while(loop<4 && [INODE_TABLE+(index*16)+8+loop]!=-1) do
+
+        alias block R7;
+        block=[INODE_TABLE+(index*16)+8+loop];
+
+        //If the disk block is loaded into a buffer, and the DIRTY BIT is set, reset the dirty bit
+        if([BUFFER_TABLE+((block%MAX_BUFFER)*4)]==block && [BUFFER_TABLE+((block%MAX_BUFFER)*4)+1]==1) then
+            [BUFFER_TABLE+((block%MAX_BUFFER)*4)+1]=0;
+        endif;
+
+        //Call the release_block() function in the Memory Manager module to free the disk block.
+        multipush(R1,R2,R3,R4,R5,R6,R7,R10,R11);
+        R1=4;   //Release Block function number
+        R2=block;   //Block number
+        R3=[SYSTEM_STATUS_TABLE+1]; //PID
+        call MOD_2;     //Memory Manager module
+        multipop(R1,R2,R3,R4,R5,R6,R7,R10,R11);
+
+        loop=loop+1;
+    endwhile;
+
+    //Invalidate (set to -1) the Inode Table of the file.
+    loop=0;
+    while(loop<16) do
+        [INODE_TABLE+(16*index)+loop]=-1;
+        loop=loop+1;
+    endwhile;
+
+
+    //Update the Root file by invalidating the entry for the file.
+    loop=0;
+    while(loop<8) do
+        [ROOT_FILE+(8*index)+loop]=-1;
+        loop=loop+1;
+    endwhile;
+
+
+    //Release the lock on the file by calling the release_inode() function in the Resource Manager module.
+    multipush(R1,R2,R3,R4,R5,R6,R7,R10,R11);
+    R1=5;   //Release Inode function number
+    R2=index;       //Inode index
+    R3=[SYSTEM_STATUS_TABLE+1];  //Current PID
+    call MOD_0;  //Resource Manager module
+    multipop(R1,R2,R3,R4,R5,R6,R7,R10,R11);
+
+
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [processTableEntry + 9] = 0;
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    //Set 0 as Return Value in the user stack. (Address Translation required)
+    [returnValueAddr] = 0; 
+
+    ireturn;
+
+
+endif;

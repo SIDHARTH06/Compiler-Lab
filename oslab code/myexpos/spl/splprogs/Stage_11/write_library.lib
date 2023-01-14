@@ -1,0 +1,64 @@
+BRKP
+
+MOV R3, SP
+SUB R3, 5
+
+MOV R1, [R3] 
+MOV R2, "Write"
+NE R2,R1
+JNZ R2, 68
+
+
+PUSH BP            
+
+MOV R3, SP
+SUB R3, 5
+
+MOV R0,[R3]       
+
+INR R3
+
+MOV R4,[R3]        
+
+INR R3
+
+MOV R5,[R3]       
+
+INR R3
+
+MOV R6,[R3]        
+
+MOV R7, 5         
+
+
+PUSH R7           
+PUSH R0
+PUSH R4
+PUSH R5
+PUSH R6
+
+INT 7
+
+POP R6              
+POP R0             
+POP R0
+POP R0
+POP R0
+
+POP BP              
+
+
+MOV R0, SP
+DCR R0
+MOV [R0],R6        
+
+
+BRKP
+
+
+
+RET
+
+
+
+

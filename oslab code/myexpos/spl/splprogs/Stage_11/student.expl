@@ -1,0 +1,39 @@
+type
+
+    Student
+    {
+        str name;
+        int marks;
+    }
+
+endtype
+
+
+int main()
+{
+
+decl
+
+        Student s;
+        int r1,r2,r3;
+
+enddecl
+
+begin
+
+    r1=initialize(); /* To Intialise the heap. */
+    s = alloc();  /* Allocates contiguous locations in the heap, t must be a user defined variable */
+
+    s.name="John";
+    s.marks=89;
+
+    r2=exposcall ("Write",-2,s.name);
+    r3=exposcall ("Write",-2,s.marks);
+
+    return 0; // dont forget to Return
+
+end
+
+}
+
+

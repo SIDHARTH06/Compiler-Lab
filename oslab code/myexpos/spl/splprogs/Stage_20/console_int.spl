@@ -1,0 +1,55 @@
+//Console INT Handler
+
+
+
+//Store the SP value in the UPTR field in the process table entry of the currently running process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13]=SP;      
+
+
+
+//Switch to the kernel stack
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]*512)-1;
+
+//Save the user context to the kernel stack
+backup;
+
+//Get the PID of the process that has aqcuired the terminal from the terminal status table
+alias reqPID R0;
+reqPID=[TERMINAL_STATUS_TABLE+1];
+
+//get the corresponding process table entry.
+alias process R1;
+process=PROCESS_TABLE+reqPID*16;
+
+
+
+//Copy P0 to input buffer field
+[process+8]=P0; 
+
+
+
+//release the terminal 
+multipush(R0,R1);
+//function number for release terminal,
+R1=9;  
+//reqPID is the PID that is holding the terminal
+R2=reqPID;
+
+
+
+
+
+//Call resource manager module.
+call MOD_0;
+
+//Ignore the return value and restore the registers pushed before.
+multipop(R0,R1);
+
+//Restore the user context from the kernel stack
+restore;
+
+//Change to user stack
+SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];  
+
+//Change to user mode
+ireturn;

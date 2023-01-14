@@ -1,0 +1,64 @@
+BRKP
+
+MOV R3, SP
+SUB R3, 5
+
+MOV R1, [R3] 
+MOV R2, "Write"
+NE R2,R1
+JNZ R2, 68
+
+
+PUSH BP            // bp is not taken care by expl
+
+MOV R3, SP
+SUB R3, 5
+
+MOV R0,[R3]        // 1st argument
+
+INR R3
+
+MOV R4,[R3]        // 2nd argument
+
+INR R3
+
+MOV R5,[R3]        // 3rd argument
+
+INR R3
+
+MOV R6,[R3]        //Ret val
+
+MOV R7, 5          // System Call number 5 for write
+
+
+PUSH R7             //Pushing corresponding values
+PUSH R0
+PUSH R4
+PUSH R5
+PUSH R6
+
+INT 7
+
+POP R6              //Storing return value
+POP R0              //Discarding values
+POP R0
+POP R0
+POP R0
+
+POP BP              //Restoring bp
+
+
+MOV R0, SP
+DCR R0
+MOV [R0],R6        //Setting the return value
+
+
+BRKP
+
+
+
+RET
+
+
+
+

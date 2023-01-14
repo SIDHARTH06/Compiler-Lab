@@ -1,0 +1,30 @@
+int main(){
+
+    decl
+        int temp,fdread,fdwrite,iter,data;
+    enddecl
+
+
+    begin
+
+        iter=0;
+        temp=exposcall("Create","test.dat",1);
+        fdwrite=exposcall("Open","test.dat");
+        fdread=exposcall("Open","num.dat");
+
+        // temp=exposcall("Seek",fdread,0);
+
+        while(iter<100) do
+            temp=exposcall("Read", fdread, data);
+            temp=exposcall("Write", fdwrite, data);
+            iter=iter+1;
+        endwhile;
+
+        temp=exposcall("Close", fdread);
+        temp=exposcall("Close", fdwrite);
+
+        return 0;
+    end
+
+
+}

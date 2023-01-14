@@ -1,0 +1,169 @@
+//MOD 5 -Scheduler
+//Obtain the PID of currently executing process from System Status Table .
+
+
+R1=ACQUIRE_SCHED_LOCK;
+call ACCESS_CONTROL;
+
+
+
+
+alias currentPID R0;
+currentPID = [SYSTEM_STATUS_TABLE+5*CORE+1];
+
+//Push the BP of the current process on top of the kernel stack as it is not taken care by eXpl
+multipush(BP);
+
+//Obtain the Process Table entry corresponding to the current PID
+alias process_table_entry R1;
+process_table_entry = PROCESS_TABLE + currentPID * 16;
+
+//Saving KPTR,PTBR and PTLR into the process table
+[process_table_entry + 12] = SP % 512;     //Note that instead of saving the actual value of KPTR, we are saving KPTR%512. This is because the OS design stipulates that KPTR must contain the offset of the kernel stack pointer within the User Area Page. 
+[process_table_entry + 14] = PTBR;
+[process_table_entry + 15] = PTLR;
+
+
+alias newPID R2;  //New Process ID
+
+
+if(CORE==PRIMARY_CORE) then
+
+	alias currentPID2 R4;
+	currentPID2=[SYSTEM_STATUS_TABLE+6];
+
+	//If LOGOUT_STATUS=1 and the secondary core is not running IDLE2, schedule IDLE
+	if([SYSTEM_STATUS_TABLE+7]==1 && currentPID2!=IDLE2_PROCESS) then
+		newPID=IDLE_PROCESS;
+		goto end;
+	endif;
+
+	//If LOGOUT_STATUS=1 and the secondary core is  running IDLE2, schedule SHELL_PROCESS
+	if([SYSTEM_STATUS_TABLE+7]==1 && currentPID2==IDLE2_PROCESS) then
+		newPID=SHELL_PROCESS;
+		goto end;
+	endif;
+
+	//If Paging is ongoing (PAGING_STATUS is not 0)
+	if([SYSTEM_STATUS_TABLE+5]!=0) then
+
+		//If the swapper daemon  is blocked,schedule idle  
+		if([PROCESS_TABLE+(SWAPPER_DAEMON*PT_ENTRY_SIZE)+4]==WAIT_DISK) then
+			newPID=IDLE_PROCESS;
+		else
+			newPID=SWAPPER_DAEMON;
+		endif;
+
+	else
+
+		newPID=(currentPID+1)%SWAPPER_DAEMON; 
+		alias ptEntry R3;
+		
+		
+		//Find the next non swapped process to schedule using the Round Robin scheduling technique, 
+		//excluding the Swapper Daemon;
+
+		while(newPID<SWAPPER_DAEMON) do
+			ptEntry=PROCESS_TABLE+(newPID*PT_ENTRY_SIZE);
+
+			if(([ptEntry+4]==READY || [ptEntry+4]==CREATED) && [ptEntry+6]==0 && newPID!=IDLE2_PROCESS && newPID!=currentPID2) then
+				break;
+			endif;
+
+			newPID=newPID+1;
+		endwhile;
+
+		//If no process (that is not swapped out) is in  READY or CREATED state, select the Idle process;
+		if(newPID>=SWAPPER_DAEMON) then
+			newPID=IDLE_PROCESS;
+		endif;
+
+
+
+	endif;
+
+end:	
+
+	[SYSTEM_STATUS_TABLE + 1] = newPID;    //Set the PID field of the System Status Table as newPID
+
+else
+//Secondary Core
+	alias currentPID1 R4;
+	currentPID1=[SYSTEM_STATUS_TABLE+1];
+	//If Paging is ongoing (PAGING_STATUS is not 0)
+	if([SYSTEM_STATUS_TABLE+5]!=0 || [SYSTEM_STATUS_TABLE+7]==1) then
+		newPID=IDLE2_PROCESS;
+	else
+
+		newPID=(currentPID+1)%SWAPPER_DAEMON; 
+		alias ptEntry R3;
+		
+		
+		//Find the next non swapped process to schedule using the Round Robin scheduling technique, 
+		//excluding the Swapper Daemon;
+
+		while(newPID<SWAPPER_DAEMON) do
+			ptEntry=PROCESS_TABLE+(newPID*PT_ENTRY_SIZE);
+
+			if(([ptEntry+4]==READY || [ptEntry+4]==CREATED) && [ptEntry+6]==0 && newPID!=IDLE_PROCESS && newPID!=LOGIN_PROCESS && newPID!=SHELL_PROCESS && newPID!=SWAPPER_DAEMON && newPID!=currentPID1) then
+				break;
+			endif;
+
+			newPID=newPID+1;
+		endwhile;
+
+		//If no process (that is not swapped out) is in  READY or CREATED state, select the Idle process;
+		if(newPID>=SWAPPER_DAEMON) then
+			newPID=IDLE2_PROCESS;
+		endif;
+
+
+
+	endif;
+
+	//Setting Current PID 2
+	[SYSTEM_STATUS_TABLE+6]=newPID;
+
+
+endif;
+
+
+
+
+alias new_process_table R4;
+new_process_table = PROCESS_TABLE + newPID * 16;
+
+
+//Obtain User Area Page number and kernel stack pointer value from Process Table entry of the new process and set SP as (User Area Page number) * 512 + (Kernel Stack pointer value).
+SP =  [new_process_table + 11] * 512 + [new_process_table + 12] ;  //Using UserAreaPage Number and KPTR
+
+
+//Restore PTBR and PTLR from the corresponding fields in the Process Table entry of the new process.
+PTBR = [new_process_table + 14];
+PTLR = [new_process_table + 15];
+
+
+
+
+
+if([new_process_table + 4] == CREATED) then   //If the process is in created state it has no user context to Restore ,so there is no need to Restore.
+	BP=[[new_process_table+11]*PAGE_SIZE];  	//Store the value in the first word of the kernel stack to the BP register. (only change in stage 20)
+	[new_process_table + 4] = RUNNING;        //Setting State
+	[new_process_table + 9]=0;                //Set Mode flag field to 0
+	R1=RELEASE_LOCK;
+	R2=SCHED_LOCK;
+	call ACCESS_CONTROL;
+	SP = [new_process_table + 13];            //Set SP to the value in the UPTR field of the process table entry.
+	ireturn;                                  //Switch to user mode
+endif;
+
+
+[new_process_table + 4] = RUNNING;            //Set the state of the new process as RUNNING.
+SP =  [new_process_table+11] * PAGE_SIZE + [new_process_table+12];
+multipop(BP);     //Pop back BP
+
+R1=RELEASE_LOCK;
+R2=SCHED_LOCK;
+call ACCESS_CONTROL;
+
+return;

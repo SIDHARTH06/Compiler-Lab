@@ -1,0 +1,22 @@
+::::::::::::::::::::::: Stage 12 :::::::::::::::::::::::::::::::::::
+
+1.We will use the the same init process as in stage 11. A second process called an idle process will also be set up in memory for execution during OS startup. The idle process simply contains an infinite loop.
+2.The PID of the idle process is fixed to be 0.
+3.The eXpOS assigns each process a unique process ID (PID)
+4.INIT program is assigned PID 1
+5.Each process take 20 words in the page table
+6.The memory layout design permits space for process/page table entries for a maximum of 16 processes. Thus, the OS can run at most 16 processes concurrently.
+7.The CREATED state indicates that the process had never been scheduled for execution previously.
+8.The process being currently scheduled is said to be in RUNNING state.
+9.According to process table, STATE field occupies 2 words. In case of RUNNING and CREATED states, second word is not required.
+10.The User Area Page Number field of a process table entry stores the page number of the user area page allocated to the process. The KPTR field must store the offset of the kernel stack pointer within this page. 
+11.The UPTR points to the top of the current value of user stack pointer.
+12. When a process is executing in user mode, the active stack will be the user stack (logical pages 8-9 of the process). When the process switches to kernel mode, the first action by the kernel code will be to save the SP value to UPTR and set the SP register to the physical address of the top of the kernel stack. When a process enters the kernel mode from user mode, the kernel stack will always be empty. Hence, SP must be set to value (User Area Page Number * 512 - 1) whenever kernel mode is entered from the user mode.
+Similarly, before a process executes IRET instruction and switch from kernel mode to user mode, the SP register must be set to previously stored value in UPTR field of the process table. The kernel stack will be empty when a process returns to user mode as there is no kernel context to be remembered.
+
+:::::::::::::::::::::::Modifications to timer interrupt handler::::::::::::::::::::::::::
+1.The actual function of timer interrupt routine is to preempt the current running process and to transfer execution to another ready processes.
+
+2.In this stage, the only situation where the timer finds the next process in CREATED state is when the IDLE process is to be scheduled for the first time. Since INIT is scheduled directly from the OS startup code, the INIT process never goes through the CREATED state.
+
+3.When an interrupt is called by user program or some harware interrupt like timer interrupt occurs, the IP is pushed to the user stack and then the execution is passed on to kernel mode.IRET does the reverse thing.

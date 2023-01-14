@@ -1,0 +1,8 @@
+::::::::::::::::::::::Stage 7:::::::::::::::::::::::::::::::
+
+
+1.The (virtual) address space of any eXpOS process is logically divided into four parts namely Shared Library, Heap, Code and Stack.
+2. In the XSM architecture, the stack grows upwards
+3.If the Runtime Library must be included when the file is loaded, the Library Flag is set to 1 in the executable file. If this flag is not set then neither memory is allocated for the heap nor the library linked to the address space of the process by the eXpOS loader at execution time. Because memory has to allocated using library functions
+4.The eXpOS loader does not gurentee that the values of SP and BP are initialised to the base address of the stack region. Hence the executable program must contain code to initialise these registers.
+5. A user program is restricted to the virtual address space  of 10 pages.(including stack,heap,library,code)

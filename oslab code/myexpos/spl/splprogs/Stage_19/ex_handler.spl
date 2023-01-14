@@ -1,0 +1,150 @@
+//Exception Handler
+
+breakpoint; //Assignment 2
+
+//Set the MODE FLAG field in the process table to -1 to indicate exception handler
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = -1;
+
+//Save the value of register SP as userSP
+alias userSP R1;
+userSP=SP;
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13]=userSP;
+
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]*512)-1;
+
+//Save the user context to the kernel stack
+backup;
+
+//push EIP onto the stack 
+//The execption handler may block for a disk Read and invoke the scheduler during it's course of execution. The value of the EIP register must be stored before scheduling other processes as the current value will be overwritten by the machine if an exception occurs in another application that is scheduled in this way.
+multipush(EIP);
+
+if(EC !=0 || userSP==(PTLR*512)-1) then     //Exception is not due to Page Fault or User Stack is full(Because the Return address can't be pushed onto the stack)
+    
+    //Print meaningful error messages
+    
+    if(EC==1) then
+    print("II");
+    breakpoint;
+    endif;
+
+    if(EC==2) then
+    print("IMAccess");
+    breakpoint;
+    endif;
+
+    if(EC==3) then
+    print("AE");
+    breakpoint;
+    endif;
+
+    if(userSP==(PTLR*512)-1) then
+    print("UStk_Full");
+    breakpoint;
+    endif;
+
+    //Invoke the Exit Process function to Halt the process (Process Manager Module)
+    multipush(R1);
+    R1=3;   //Exit Process Function Number
+    R2=[SYSTEM_STATUS_TABLE+1]; //Current PID
+    call MOD_1; //Calling Process Manager Module
+    
+    //Not popping here because there is one more module to Call
+
+    //Invoke the Scheduler
+    call MOD_5;
+    multipop(R1);
+endif;
+
+
+//Exception is due to Page Fault
+
+if(EPN>=4 && EPN<=7) then  //Checking whether the Page fault is caused due to a code Page
+    alias blockNum R2;
+    blockNum=[DISK_MAP_TABLE+([SYSTEM_STATUS_TABLE+1]*10)+EPN]; //Getting the Block Number to be loaded
+    
+    //Call Get Code Page Function in memory manager Module(MOD_2)
+    multipush(R1,R2);
+    R1=5;        //Get Code Page Function number
+    //R2 already contains the block number
+    call MOD_2;     //Memory Manager Module
+    multipop(R1,R2);
+
+    // Update the page table entry for this code page
+    [PTBR+(EPN*2)]=R0;    //R0 contains the Physical Page number where the code is loaded
+    [PTBR+(EPN*2)+1]="1100";  //Set reference and valid bits to 1 , write bit to 0 (Code pages cannot be written)
+endif;
+
+
+if(EPN==2 || EPN==3) then //Checking whether the Page fault is caused due to a heap Page
+
+    //For First Heap Page
+    //Invoke get free page function of memory manager module
+    multipush(R1);
+    R1=1;       //Get free Page Function number
+    call MOD_2;     //Calling memory manager module
+    multipop(R1);
+
+    alias freePage R0;      //R0 contains the freePage Number
+
+    //Update the Page Table entry for the first Heap Page
+    [PTBR+4]=freePage;
+    [PTBR+5]="1110";    //Sets reference,valid and write bits to 1 (Heap Pages are allowed to be written)
+
+
+    //For Second Heap Page
+    //Invoke get free page function of memory manager module
+    multipush(R1);
+    R1=1;       //Get free Page Function number
+    call MOD_2;     //Calling memory manager module
+    multipop(R1);
+
+    //Update the Page Table entry for the second Heap Page
+    [PTBR+6]=freePage;
+    [PTBR+7]="1110";    //Sets reference,valid and write bits to 1 (Heap Pages are allowed to be written)
+
+endif;
+
+//Reset the MODE FLAG field in the process table to 0 as we are returning to user mode
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+
+//Pop EIP from the stack
+multipop(EIP);
+
+//Restore the register context.
+restore;
+
+//Restore SP to the USER SP stored in the process table.
+SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+
+
+//Increment the SP;
+SP=SP+1;
+
+//Translate SP to physical address and Store EIP value to that location
+[[PTBR+2*(SP/512)]*512+(SP%512)]=EIP;
+
+ireturn;    //Return to user mode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,17 @@
+::::::::::::::::::Stage 9:::::::::::::::::::::::::
+1.eXpOS requires that when the OS enters an interrupt handler that runs in kernel mode, the interrupt handler must switch to a different stack.
+
+2.To isolate the kernel from the user stack, the OS kernel must maintain two stacks for a program - a user stack and a kernel stack
+
+3.The kernel stack is used to store the execution context of the user process. (The backup and restore instructions of the XSM machine facilitate this).
+
+4.The kernel maintains a data structure called System Status Table where the PID of the currently executing user process is maintained.
+
+5.The System Status Table is stored starting from memory address 29560.
+
+6.Registers R0-R15 are user registers.
+
+7.Registers R16-R19 are marked for kernel use and hence the kernel can modify them. The SPL compiler will use these registers to translate your SPL code.
+
+
+Note: If you try to execute init program of stage 10 in this stage it will give an null instruction because  INT 7 is not defined in this stage.

@@ -1,0 +1,75 @@
+load --init /home/anonymous/OS_lab/Assignments/Stage_28/login.xsm
+load --os=primary   /home/anonymous/OS_lab/Assignments/Stage_28/os_startup.xsm
+load --os=secondary  /home/anonymous/OS_lab/Assignments/Stage_28/os_startup2.xsm
+load --module 8   /home/anonymous/OS_lab/Assignments/Stage_28/pete_mod8.xsm
+load --module 7  /home/anonymous/OS_lab/Assignments/Stage_28/boot_pete.xsm
+load --int=10  /home/anonymous/OS_lab/Assignments/Stage_28/int_10.xsm
+load --module 5 /home/anonymous/OS_lab/Assignments/Stage_28/mod_5.xsm
+load --int=timer  /home/anonymous/OS_lab/Assignments/Stage_28/timer.xsm
+load --idle /home/anonymous/OS_lab/Assignments/Stage_28/idle.xsm
+load --library /home/anonymous/OS_lab/mynexpos/expl/library.lib
+load --module 0 /home/anonymous/OS_lab/Assignments/Stage_28/mod_0.xsm
+load --module 4 /home/anonymous/OS_lab/Assignments/Stage_28/mod_4.xsm
+load --int=7 /home/anonymous/OS_lab/Assignments/Stage_28/int7.xsm
+load --int=console /home/anonymous/OS_lab/Assignments/Stage_28/console_int.xsm
+load --int=6 /home/anonymous/OS_lab/Assignments/Stage_28/int6.xsm
+load --int=9  /home/anonymous/OS_lab/Assignments/Stage_28/int9.xsm
+load --module 1 /home/anonymous/OS_lab/Assignments/Stage_28/mod_1.xsm
+load --module 2 /home/anonymous/OS_lab/Assignments/Stage_28/mod_2.xsm
+load --int=disk /home/anonymous/OS_lab/Assignments/Stage_28/disk_int.xsm
+load --exhandler  /home/anonymous/OS_lab/Assignments/Stage_28/ex_handler.xsm
+load --int=8  /home/anonymous/OS_lab/Assignments/Stage_28/int8.xsm
+load --int=11 /home/anonymous/OS_lab/Assignments/Stage_28/int_11.xsm
+load --int=15 /home/anonymous/OS_lab/Assignments/Stage_28/int_15.xsm
+load --int=13  /home/anonymous/OS_lab/Assignments/Stage_28/int_13.xsm
+load --int=14   /home/anonymous/OS_lab/Assignments/Stage_28/int_14.xsm
+load --int=4    /home/anonymous/OS_lab/Assignments/Stage_28/int4.xsm
+load --int=5    /home/anonymous/OS_lab/Assignments/Stage_28/int5.xsm
+load --module 3   /home/anonymous/OS_lab/Assignments/Stage_28/mod_3.xsm
+load --int=12   /home/anonymous/OS_lab/Assignments/Stage_28/int12.xsm
+load --int=16   /home/anonymous/OS_lab/Assignments/Stage_28/int16.xsm
+load --int=17   /home/anonymous/OS_lab/Assignments/Stage_28/int17.xsm
+load --module 6 /home/anonymous/OS_lab/Assignments/Stage_28/mod_6.xsm
+load --shell    /home/anonymous/OS_lab/Assignments/Stage_28/shell.xsm
+rm ls.xsm
+load --exec     /home/anonymous/OS_lab/Assignments/Stage_28/ls.xsm
+rm rm.xsm
+load --exec     /home/anonymous/OS_lab/Assignments/Stage_28/rm.xsm
+rm cp.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/cp.xsm
+rm cat.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/cat.xsm
+rm lu.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/lu.xsm
+rm ru.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/ru.xsm
+rm as1s27.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/as1s27.xsm
+rm as2s27.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/as2s27.xsm
+rm as3s27.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/as3s27.xsm
+rm pgm1.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/pgm1.xsm
+rm as4s27.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/as4s27.xsm
+rm pgm2.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/pgm2.xsm
+rm merge.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/merge.xsm
+rm m_store.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/m_store.xsm
+rm m_sort.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/m_sort.xsm
+rm m_merge.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/m_merge.xsm
+rm as4_mod.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/as4_mod.xsm
+rm sample.dat
+load --data  /home/anonymous/OS_lab/myexpos/sample.dat
+rm pid.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/pid.xsm
+rm  ass4.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_28/ass4.xsm
+dump --inodeusertable
+dump --rootfile

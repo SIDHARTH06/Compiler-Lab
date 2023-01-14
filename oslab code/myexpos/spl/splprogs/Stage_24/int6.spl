@@ -1,0 +1,268 @@
+//Read System Call (System Call number 7)
+
+//Save the value of register SP as userSP
+alias userSP R1;
+userSP=SP;
+
+
+alias pid R2;
+pid=[SYSTEM_STATUS_TABLE+1];
+
+alias processTableEntry R3;
+processTableEntry=PROCESS_TABLE + (pid * PT_ENTRY_SIZE);
+
+
+
+//Set the MODE FLAG field in the process table to the system call number which is 7 for read system call
+[processTableEntry + 9] = 7;
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[processTableEntry+ 13]=userSP;
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([processTableEntry + 11]*512)-1;
+
+
+//Getting the fileDescriptor (Argument 1)
+alias fileDescriptor R4;
+fileDescriptor=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+
+//Calculate physical address of the argument 2 and extract the value from it , which is the word address.
+alias word R5;
+word = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+
+
+alias physicalAddrRetVal R6;
+physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/ 512] * 512) + ((userSP - 1) % 512);
+
+
+
+
+//Terminal Read
+if(fileDescriptor==-1) then
+    
+    
+    multipush(R1,R2,R3,R4,R5,R6);           //Saving Register Context
+    R1=4;                                   //Store the function number of Terminal Read
+    R2=pid;           //PID of the current process
+    R3=word;                                //address of word
+    call MOD_4;                             //Calling Device Manager Module
+
+    //Ignore contents of R0 as terminal write does not Return anything
+    multipop(R1,R2,R3,R4,R5,R6);            //Restore the Context
+
+    // //recalculating physical address
+    // physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/ 512] * 512) + ((userSP - 1) % 512);
+    // //Set the Return value as 0 indicating success
+    // [physicalAddrRetVal] = 0;
+
+
+else
+
+    //If file descriptor is invalid, return -1.
+    // File descriptor value should be within the range 0 to 7 (both included).
+    if(fileDescriptor<0 || fileDescriptor>7) then
+
+        [physicalAddrRetVal]=-1;
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry+ 9] = 0;
+
+        // set back the value of SP to point to top of user stack
+        SP = userSP;
+
+        //passing control back to user program
+        ireturn;
+
+
+    endif;
+
+
+    //Locate the Per-Process Resource Table of the current process.
+    alias resourceTable R7;
+    resourceTable=([processTableEntry+11]*512)+RESOURCE_TABLE_OFFSET;
+
+    //If the Resource identifier field of the Per Process Resource Table entry is invalid or does not indicate a FILE, return -1.  
+    if([resourceTable+(fileDescriptor*2)]!=FILE) then
+
+        [physicalAddrRetVal]=-1;
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry+ 9] = 0;
+
+        // set back the value of SP to point to top of user stack
+        SP = userSP;
+
+        //passing control back to user program
+        ireturn;
+
+
+
+    endif;
+
+
+
+    //Get the index of the Open File Table entry from the Per Process Resource Table entry.
+    alias fileTableIndex R8;
+    fileTableIndex=[resourceTable+(fileDescriptor*2)+1];
+
+    //Get the index of the Inode Table entry from the Open File Table entry. 
+    alias inodeIndex R9;
+    inodeIndex=[OPEN_FILE_TABLE+(fileTableIndex*4)];
+
+
+    //Acquire the Lock on the File by calling the acquire_inode() function in the Resource Manager module.
+    multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+    R1=4;   //Acquire Inode
+    R3=pid;     //Giving pid first because pid is stored in R2
+    R2=inodeIndex;      //Inode index
+    call MOD_0;     //Resource Manager Module
+    multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+
+
+    //recalculating physical address after blocking call
+    physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/ 512] * 512) + ((userSP - 1) % 512);
+
+    //If acquire inode fails Return -1
+    if(R0==-1) then
+
+        [physicalAddrRetVal]=-1;
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry+ 9] = 0;
+
+        // set back the value of SP to point to top of user stack
+        SP = userSP;
+
+        //passing control back to user program
+        ireturn;
+
+
+    endif;
+
+
+    //Get the Lseek position from the Open File Table entry
+    alias lseek R10;
+    lseek=[OPEN_FILE_TABLE+(fileTableIndex*4)+2];
+
+
+    alias physicalAddr R11;
+    //Get the physical address curresponding to the logical address of Memory Buffer address given as input.
+    physicalAddr=([PTBR+2*(word/512)]*512)+(word%512);
+
+
+    // If The File corresponds to Root file 
+    if(inodeIndex==INODE_ROOT) then
+
+        //If the lseek value is equal to the root file size(480), release_inode() return -2. 
+        if(lseek==480) then
+
+            multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+            R1=5;   //Release Inode
+            R3=pid;
+            R2=inodeIndex;
+            call MOD_0;     //Resource Manager
+            multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+
+
+            [physicalAddrRetVal]=-2;
+
+            //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+            [processTableEntry+ 9] = 0;
+
+            // set back the value of SP to point to top of user stack
+            SP = userSP;
+
+            //passing control back to user program
+            ireturn;
+
+        endif;
+
+
+        //Read from the word at lseek position in memory copy of root file to the translated memory address. 
+        [physicalAddr]=[ROOT_FILE+lseek];
+
+        //Increment the Lseek position in the Open File Table.
+        [OPEN_FILE_TABLE+(fileTableIndex*4)+2]=lseek+1;
+
+
+
+    else
+
+        //If lseek position is same as the file size, release_inode() and return -2.  /* End of file reached */
+        if(lseek==[INODE_TABLE+(inodeIndex*16)+2]) then
+
+            multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+            R1=5;   //Release Inode
+            R3=pid;
+            R2=inodeIndex;
+            call MOD_0;     //Resource Manager
+            multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+
+
+            [physicalAddrRetVal]=-2;
+
+            //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+            [processTableEntry+ 9] = 0;
+
+            // set back the value of SP to point to top of user stack
+            SP = userSP;
+
+            //passing control back to user program
+            ireturn;
+
+        endif;
+
+
+        alias blockIndex R12;
+        blockIndex=lseek/512;
+
+        alias diskBlockNumber R13;
+        diskBlockNumber=[INODE_TABLE+(inodeIndex*16)+8+blockIndex];
+
+        alias offset R14;
+        offset=lseek%512;
+
+        //Read the data from the File Buffer by calling the buffered_read() function in the File Manager module.
+        multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14);
+        R1=2;   //Buffered Read
+        R2=diskBlockNumber;     //Disk Block Number
+        R3=offset;
+        R4=word;        //LogicalAddress should be provided
+        call MOD_3;             //File Manager
+        multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14);
+
+        //Increment the Lseek position in the Open File Table.
+        [OPEN_FILE_TABLE+(fileTableIndex*4)+2]=lseek+1;
+
+
+    endif;
+
+    //	Release the Lock on the File by calling the release_inode() function in the Resource Manager module.
+    multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14);
+    R1=5;   //Release Inode
+    R3=pid;
+    R2=inodeIndex;
+    call MOD_0;     //Resource Manager
+    multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14);
+
+
+endif;
+
+//recalculating physical address after blocking call
+physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/ 512] * 512) + ((userSP - 1) % 512);
+
+//Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+[processTableEntry+ 9] = 0;
+
+// set back the value of SP to point to top of user stack
+SP = userSP;
+
+
+//Return 0
+[physicalAddrRetVal]=0;
+
+//passing control back to user program
+ireturn;
+

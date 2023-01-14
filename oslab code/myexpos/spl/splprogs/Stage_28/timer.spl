@@ -1,0 +1,157 @@
+//Switch to kernel stack
+
+
+
+//Save the current value of User SP into the corresponding Process Table entry
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16) + 13] = SP;
+
+
+// Setting SP to UArea Page number * 512 - 1 (Kernel Stack)
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * 16) + 11] * 512 - 1;
+
+
+//Save the user context to the kernel stack
+backup;
+
+
+//Stage 27
+
+alias pagingStatus R1;
+pagingStatus=[SYSTEM_STATUS_TABLE+5];
+
+
+alias pid R2;
+pid=[SYSTEM_STATUS_TABLE+5*CORE+1];
+
+//If swapping is initiated
+if(pagingStatus!=0 && CORE==PRIMARY_CORE) then
+
+    //Call Swap In/Out, if necessary
+    //Only Core 1 can execute SWAPPER_DAEMON
+    if(pid==SWAPPER_DAEMON) then
+        //Call the swap_out()/swap_in() function in the Pager Module.
+        multipush(R1,R2);
+
+        R1=ACQUIRE_KERN_LOCK;
+        call ACCESS_CONTROL;  
+
+        multipop(R1,R2);
+        multipush(R1,R2);
+
+        //R1 already contains function number
+        //R2 already contains current pid
+        call MOD_6;     //Pager Module
+
+        R1=RELEASE_LOCK;
+        R2=KERN_LOCK;
+        call ACCESS_CONTROL;
+
+
+        multipop(R1,R2);
+    endif;
+
+    
+
+else       
+    //Swapping is not on now.  Check whether it must be initiated
+    alias memFreeCount R3;
+    memFreeCount=[SYSTEM_STATUS_TABLE+2];
+
+    if(memFreeCount<MEM_LOW) then
+        //Swap Out to be invoked during next Timer Interrupt
+        //Set the Paging Status in System Status Table to SWAP_OUT.
+        [SYSTEM_STATUS_TABLE+5]=SWAP_OUT;
+    else
+        //If there are swapped out processes. Check SWAPPED_COUNT in System Status Table
+        if([SYSTEM_STATUS_TABLE+4]>0) then
+
+            //If (Tick of any Swapped Out process > MAX_TICK or MEM_FREE_COUNT > MEM_HIGH)
+            // Swap In to be invoked during next Timer Interrupt
+            //Set the Paging Status in System Status Table to SWAP_IN.
+            if(memFreeCount>MEM_HIGH) then
+                [SYSTEM_STATUS_TABLE+5]=SWAP_IN;                
+            else
+
+                alias lp R4;
+                lp=SHELL_PROCESS+1;
+                while(lp<SWAPPER_DAEMON) do
+                    
+                    alias ptEntry R5;
+                    ptEntry=PROCESS_TABLE+(lp*PT_ENTRY_SIZE);
+
+                    if([ptEntry+6]==1 && [ptEntry]>MAX_TICK) then
+                        [SYSTEM_STATUS_TABLE+5]=SWAP_IN;  
+                        break;
+                    endif;
+
+
+                    lp=lp+1;
+                endwhile;
+
+
+
+
+            endif;
+
+
+
+
+        endif;
+
+
+
+    endif;
+    
+
+
+
+
+
+
+endif;
+
+
+
+
+
+
+
+
+
+
+
+//Change the state of the current process in its Process Table entry from RUNNING to READY.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE+1] * 16 + 4] = READY;   
+
+
+//Loop through the process table entires and increment the TICK field of each process.
+alias loop R0;
+loop=0;
+while(loop<=15)do
+[PROCESS_TABLE+loop*16]=[PROCESS_TABLE+loop*16]+1;
+loop=loop+1;
+endwhile;
+
+
+
+
+call MOD_5; // invoke  context switch module (Scheduler module)
+
+
+
+//Restore the user context from the kernel stack
+restore;
+
+// set SP to the user SP saved in Process Table, before returning to user mode as it was in running state before so there is user context to be restored
+SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16) + 13];  
+
+
+
+//Set the MODE_FLAG in the process table entry to 0.
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16) + 9]=0;
+
+
+
+//switch to user mode
+ireturn;
+

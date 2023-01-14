@@ -1,0 +1,221 @@
+// INT 13 Routine :Semget ,Semrelease
+
+
+
+
+alias sysCall R1;
+alias userSP R2;
+
+//Storing userSP
+userSP=SP;
+
+//Extracting  System Call number from user stack
+sysCall=[([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 13]=SP;
+
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 11]*512)-1;
+
+multipush(R1,R2);
+R1=ACQUIRE_KERN_LOCK;
+call ACCESS_CONTROL;
+multipop(R1,R2);
+
+
+
+
+//Checking whether it is Semget system Call
+if(sysCall== 17) then
+
+    //Set the MODE FLAG field in the process table to the system call number which is 17 for SemGet system call
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 9] = 17;
+
+    alias index R3;
+    alias userAreaPage R4;
+    alias resourceTable R5;
+
+    index=0;
+    userAreaPage=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+5*CORE + 1]*PT_ENTRY_SIZE)+11];
+    resourceTable=(userAreaPage*512)+RESOURCE_TABLE_OFFSET;
+
+
+    //Checking for free entries in resource table
+    while(index<8 && [resourceTable+(index*2)]!=-1) do
+        index=index+1;
+    endwhile;
+
+
+    //If no free entry, then return -1.
+    if(index==8) then
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -1;
+
+        R1=RELEASE_LOCK;
+        R2=KERN_LOCK;
+        call ACCESS_CONTROL;
+
+        //Switch to user stack
+        SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+
+        
+
+        ireturn;
+    endif;
+
+
+    //Resource Identifier field of the per-process resource table set to 1. (Semaphore)
+    [resourceTable+(index*2)]=SEMAPHORE;
+
+    //Call Acquire Semaphore from resource manager module
+    multipush(R1,R2,R3,R4,R5);
+    R1=6;
+    R2=[SYSTEM_STATUS_TABLE+5*CORE + 1]; //Current pid
+    call MOD_0;     //Resource manager module
+    multipop(R1,R2,R3,R4,R5);
+
+    alias sem R6;
+    sem=R0;
+
+
+    //If there are no free Semaphores then Return -2
+    if(sem==-1) then
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+        //Set -2 as Return Value in the user stack. (Address Translation required)
+        [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -2;
+
+        R1=RELEASE_LOCK;
+        R2=KERN_LOCK;
+        call ACCESS_CONTROL;
+
+        //Switch to user stack
+        SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+        
+
+        ireturn;
+    endif;
+
+
+    //Store the index of the Semaphore table entry in the Per Process Resource Table entry. 
+    [resourceTable+(index*2)+1]=sem;
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+
+
+    //Set Per Process Resource Table index  as Return Value in the user stack. (Address Translation required)
+    [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = index;
+
+    R1=RELEASE_LOCK;
+    R2=KERN_LOCK;
+    call ACCESS_CONTROL;
+
+
+
+    //Switch to user stack
+    SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+   
+
+    
+
+    ireturn;
+
+endif;
+
+
+
+//Checking whether it is Semrelease system Call
+if(sysCall==18) then
+
+    //Set the MODE FLAG field in the process table to the system call number which is 18 for SemRelease system Call
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 9] = 18;
+
+    //Getting Semaphore Descriptor (Argument 1)
+    alias semDesc R3;
+    semDesc=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+    alias userAreaPage R4;
+    alias resourceTable R5;
+
+    userAreaPage=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+5*CORE + 1]*PT_ENTRY_SIZE)+11];
+    resourceTable=((userAreaPage+1)*512)-16;
+
+    //Checking IF Semaphore Descriptor is invalid
+    if(semDesc<0 || semDesc>7 || [resourceTable+(2*semDesc)]!=SEMAPHORE) then
+
+         //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -1;
+        
+
+        R1=RELEASE_LOCK;
+        R2=KERN_LOCK;
+        call ACCESS_CONTROL;
+
+
+        //Switch to user stack
+        SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+        
+
+        ireturn;
+    endif;
+
+   
+
+    //Invoke release semaphore in Resource Manager module
+    multipush(R1,R2,R3,R4,R5);
+    R1=7;       //Function Number
+    R2=[resourceTable+(2*semDesc)+1];   //Semaphore Table index
+    R3=[SYSTEM_STATUS_TABLE+5*CORE+1];     //Current pid
+    call MOD_0;         //Calling Resource Manager module
+    multipop(R1,R2,R3,R4,R5);
+
+
+    //Invalidate the Per-Process resource table entry
+    [resourceTable+(2*semDesc)]=-1;
+    [resourceTable+(2*semDesc)+1]=-1;
+
+
+    
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+    //Set 0 as Return Value in the user stack. (Address Translation required)
+    [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = 0; 
+
+    R1=RELEASE_LOCK;
+    R2=KERN_LOCK;
+    call ACCESS_CONTROL;
+
+    //Switch to user stack
+    SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+    ireturn;
+
+endif;
+
+
+
+
+
+
+
+
+

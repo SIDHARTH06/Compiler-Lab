@@ -1,0 +1,427 @@
+//loadi(mem,disk)
+// breakpoint;
+
+//Module 6  (Pager Module)
+loadi(52,65);
+loadi(53,66);
+
+//Shell process
+loadi(67,9);
+loadi(68,10);
+
+//INT 16 (Newusr, Remusr, Setpwd, Getuname, Getuid)
+loadi(34,47);
+loadi(35,48);
+
+//INT 12 (Logout)
+loadi(26,39);
+loadi(27,40);
+
+//INT 17 (Login)
+loadi(36,49);
+loadi(37,50);
+
+
+//Load INT 5 (Seek, Open, Close)
+loadi(12,25);
+loadi(13,26);
+
+
+//Load module 3 (File Manager)
+loadi(46,59);
+loadi(47,60);
+
+//Load INT 4 (Create,Delete)
+loadi(10,23);
+loadi(11,24);
+
+//Root File
+loadi(62,5);
+
+
+
+//Load INT 13 (Semget,Semrelease)
+loadi(28,41);
+loadi(29,42);
+
+//Load INT 14 (SemLock,SemUnlock)
+loadi(30,43);
+loadi(31,44);
+
+
+
+//Load INT 11 (Getpid, Getppid, Wait, Signal)
+loadi(24,37);
+loadi(25,38);
+
+//Load INT 15 (Shutdown)
+loadi(32,45);
+loadi(33,46);
+
+
+//Load INT 8 (Fork)
+loadi(18,31);
+loadi(19,32);
+
+//Load Disk Free List
+loadi(61,2);
+
+
+//Load Disk Interrupt Routine
+loadi(6,19);
+loadi(7,20);
+
+
+//Load INT 9(Exec system Call)
+loadi(20,33);
+loadi(21,34);
+
+//Load module 1 (Process Manager)
+loadi(42,55);
+loadi(43,56);
+
+//Load module 2 (Memory Manager)
+loadi(44,57);
+loadi(45,58);
+
+//Load inode user table
+loadi(59,3);
+loadi(60,4);
+
+
+
+
+//Load Console Interrupt handler
+loadi(8,21);
+loadi(9,22);
+
+//Load INT 6 (READ)
+loadi(14,27);
+loadi(15,28);
+
+
+
+//Load Module 0 to memory (Resource manager module)
+loadi(40,53);
+loadi(41,54);
+
+
+//Load Module 4 to memory (Device Manager Module)
+loadi(48,61);
+loadi(49,62);
+
+
+//Load Module 5 to memory (Scheduler Module)
+loadi(50,63);
+loadi(51,64);
+
+
+
+//Load INIT program to memory (mem,disk) (Only one code page is required)
+loadi(65,7);
+
+
+
+
+
+
+//Load Timer Interrupt routine from disk blocks 17 and 18 to memory pages 4 and 5
+
+loadi(4,17);
+loadi(5,18);
+
+
+
+
+
+
+//Load INT10 (exit) module from disk to memory
+
+loadi(22,35);
+loadi(23,36);
+
+
+
+//Load exception handler routine from disk to memory
+
+loadi(2,15);
+loadi(3,16);
+
+
+
+//Load Library Code from disk to memory
+
+loadi(63,13);
+loadi(64,14);
+
+
+
+//Load INT 7 (write) from disk to memory.
+loadi(16,29);
+loadi(17,30);
+
+
+// For INIT Process
+
+PTBR = PAGE_TABLE_BASE+20;    //For INIT Process
+
+//Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+//Heap
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
+
+//Code, The code segment consists of four pages
+[PTBR+8]  = 65;
+[PTBR+9]  = "0100";
+[PTBR+10] = -1;
+[PTBR+11] = "0000";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+//Stack
+[PTBR+16] = 66;       
+[PTBR+17] = "0110";
+[PTBR+18] = -1;
+[PTBR+19] = "0000";
+
+
+
+
+// Process Table entries For INIT Process
+//The process table entry for INIT process starts at PROCESS_TABLE+16
+[PROCESS_TABLE + 27] = 77;          //Set the User Area page number in the Process Table entry of the current process.
+//As we are using the second Process Table entry, the PID will be 1. eXpOS kernel is expected to store the PID in the PID field of the process table.
+[PROCESS_TABLE + 17] = 1;           //Setting PID for INIT
+[PROCESS_TABLE + 20] = CREATED;     //Setting state for INIT to CREATED as IDLE Process is scheduled first
+[PROCESS_TABLE + 29] = 8*512;       //UPTR For INIT Process
+[PROCESS_TABLE + 28] = 0;            //KPTR for INIT
+[PROCESS_TABLE + 30] = PAGE_TABLE_BASE+20;      //PTBR Field for INIT Process
+[PROCESS_TABLE + 31] = 10;           //PTLR Field for INIT Process
+[PROCESS_TABLE + 19] = 1;            //Setting user id of init as root
+
+[66*512] = [65 * 512 + 1];  // Storing the entry point of the code to the top of the stack of the INIT Process
+
+
+//For Shell Process
+alias shellPTBR R3;
+shellPTBR=PAGE_TABLE_BASE+40;
+
+
+
+//Library
+[shellPTBR+0] = 63;
+[shellPTBR+1] = "0100";
+[shellPTBR+2] = 64;
+[shellPTBR+3] = "0100";
+
+//Heap
+[shellPTBR+4] = -1;
+[shellPTBR+5] = "0000";
+[shellPTBR+6] = -1;
+[shellPTBR+7] = "0000";
+
+//Code, The code segment consists of four pages
+[shellPTBR+8]  = 67;
+[shellPTBR+9]  = "0100";
+[shellPTBR+10] = 68;
+[shellPTBR+11] = "0100";
+[shellPTBR+12] = -1;
+[shellPTBR+13] = "0000";
+[shellPTBR+14] = -1;
+[shellPTBR+15] = "0000";
+
+//Stack
+[shellPTBR+16] = 78;         
+[shellPTBR+17] = "0110";
+[shellPTBR+18] =  79;
+[shellPTBR+19] = "0110";
+
+
+alias shellProcessEntry R4;
+shellProcessEntry=PROCESS_TABLE+(2*PT_ENTRY_SIZE);
+
+
+// Process Table entries For Shell Process
+
+[shellProcessEntry+ 11] = 80;          //Set the User Area page number in the Process Table entry of the current process.
+//As we are using the third Process Table entry, the PID will be 2. eXpOS kernel is expected to store the PID in the PID field of the process table.
+[shellProcessEntry + 1] = 2;           //Setting PID for SHELL
+[shellProcessEntry + 2] = 1;           //Setting PPID for SHELL
+[shellProcessEntry + 4] = TERMINATED;     //Setting state for SHELL to TERMINATED 
+[shellProcessEntry + 13] = 8*512;       //UPTR For Shell Process
+[shellProcessEntry + 12] = 0;            //KPTR for shell
+[shellProcessEntry + 14] = shellPTBR;      //PTBR Field for shell Process
+[shellProcessEntry + 15] = 10;           //PTLR Field for shell Process
+[shellProcessEntry + 3] = 0;            //Setting user id of shell
+[shellProcessEntry + 6] = 0;            //Initializing Swap Flag(I added this)
+//Initialize the disk map table entry of the shell process (PID = 2)
+
+//Heap
+[DISK_MAP_TABLE+22]=-1;
+[DISK_MAP_TABLE+23]=-1;
+
+//Code
+[DISK_MAP_TABLE+24]=9;
+[DISK_MAP_TABLE+25]=10;
+[DISK_MAP_TABLE+26]=-1;
+[DISK_MAP_TABLE+27]=-1;
+
+//Stack
+[DISK_MAP_TABLE+28]=-1;
+[DISK_MAP_TABLE+29]=-1;
+
+
+
+
+[78*512] = [67 * 512 + 1];  // Storing the entry point of the code to the top of the stack of the shell Process
+
+
+
+
+
+
+
+
+
+
+
+//Setting State field of all other remaining processes in process table entry to TERMINATED
+// Maximum number of Processes in eXpos is 16 and number of attributes in a single entry is also PT_ENTRY_SIZE which is 16
+alias pid R1;
+
+pid=3;
+
+while(pid<=14) do
+    [PROCESS_TABLE+PT_ENTRY_SIZE*pid+4]=TERMINATED;
+    pid=pid+1;
+endwhile;
+
+
+
+//Initialize the STATUS field in the Terminal Status table as 0.
+[TERMINAL_STATUS_TABLE]=0;
+
+
+//Initialize the memory free list with value 1 for pages used and 0 for free pages.
+alias loop R1;
+loop=0;
+
+while(loop<83) do
+    [MEMORY_FREE_LIST+loop]=1;
+    loop=loop+1;
+endwhile;
+
+while(loop<MAX_MEM_PAGE) do
+    [MEMORY_FREE_LIST+loop]=0;
+    loop=loop+1;
+endwhile;
+
+
+//Initialize the field WAIT_MEM_COUNT to 0
+[SYSTEM_STATUS_TABLE+3]=0;
+//Initialize MEM_FREE_COUNT to number of free pages.
+[SYSTEM_STATUS_TABLE+2]=45;
+
+//Initialize the SWAPPED_COUNT field to 0 and PAGING_STATUS field to 0 in the system status table to 0, as initially there are no swapped out processes.
+[SYSTEM_STATUS_TABLE+4]=0;
+[SYSTEM_STATUS_TABLE+5]=0;
+
+
+
+//Initialize the STATUS field in the Disk Status Table to 0.
+[DISK_STATUS_TABLE]=0;
+
+
+
+//Initializing Per Process Resource Table in User Area Page of init process
+alias initResourceTable R2;
+
+loop=0;
+initResourceTable=(77*512)+RESOURCE_TABLE_OFFSET;  //User Area Page of Init process is 77
+
+while(loop<16) do
+    [initResourceTable+loop]=-1;
+    loop=loop+1;
+endwhile;
+
+
+//Initializing Per Process Resource Table in User Area Page of Shell process
+alias shellResourceTable R2;
+
+loop=0;
+shellResourceTable=(80*512)+RESOURCE_TABLE_OFFSET;  //User Area Page of Shell process is 80
+
+while(loop<16) do
+    [shellResourceTable+loop]=-1;
+    loop=loop+1;
+endwhile;
+
+
+
+
+alias semEntry R5;
+//Initialize the semaphore table by setting PROCESS COUNT to 0 and LOCKING PID to -1 for all entries.
+loop=0;
+while(loop<MAX_SEM_COUNT) do
+    semEntry=SEMAPHORE_TABLE+(4*loop);
+    [semEntry]=-1;
+    [semEntry+1]=0;
+    loop=loop+1;
+endwhile;
+
+
+//Initialize the file status table by setting LOCKING PID and FILE OPEN COUNT fields of all entries to -1.
+loop=0;
+alias fileStatusEntry R5;
+while(loop<MAX_FILE_NUM) do
+    fileStatusEntry=FILE_STATUS_TABLE+(loop*4);
+    [fileStatusEntry]=-1;    //Set Locking pid to -1
+    [fileStatusEntry+1]=-1;   //Set File open count to -1
+    loop=loop+1;
+endwhile;
+
+
+//Initialize the buffer table by setting BLOCK NUMBER and LOCKING PID fields to -1 and DIRTY BIT to 0 in all entries.
+loop=0;
+alias bufferTableEntry R5;
+while(loop<MAX_BUFFER) do
+    bufferTableEntry=BUFFER_TABLE+(loop*4);
+    [bufferTableEntry]=-1;    //Block number
+    [bufferTableEntry+1]=0;    //Dirty bit
+    [bufferTableEntry+2]=-1;   //Locking PID
+    loop=loop+1;
+endwhile;
+
+
+
+//Initialize all entries of the open file table by setting INODE INDEX field to -1 and OPEN INSTANCE COUNT field to 0.
+loop=0;
+alias openFileTableEntry R5;
+while(loop<MAX_OPENFILE_NUM) do
+    openFileTableEntry=OPEN_FILE_TABLE+(loop*4);
+    [openFileTableEntry]=-1;  //Inode Index field to -1
+    [openFileTableEntry+1]=0; //Open Instance count to 0
+
+
+    loop=loop+1;
+endwhile;
+
+
+// //Initialize the TICK field to 0 for all the 16 process table entries.
+// loop=0;
+// while(loop<MAX_PROC_NUM) do
+//     [PROCESS_TABLE+(loop*PT_ENTRY_SIZE)]=0;
+//     loop=loop+1;
+// endwhile;
+
+
+return;

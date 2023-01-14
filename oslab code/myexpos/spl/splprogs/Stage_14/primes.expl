@@ -1,0 +1,33 @@
+int main()
+{
+decl
+    int ret,num,temp,flag;
+    
+enddecl
+begin
+    num=2;
+   
+    while ( num <= 100 ) do
+        flag=0;
+        temp=2;
+        while(temp < num) do
+
+            if((num%temp)==0)then
+            flag=1;
+            break;
+            endif;
+
+            temp=temp+1;
+        endwhile;
+
+         if(flag==0)then 
+         ret = exposcall ( "Write" , -2, num );
+          
+         endif;
+         
+        num=num+1;
+
+    endwhile;
+    return 0;
+end
+}

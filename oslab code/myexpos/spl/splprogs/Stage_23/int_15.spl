@@ -1,0 +1,89 @@
+//Shutdown System Call (INT 15) (System  Call Number 21)
+
+alias userSP R1;
+
+//Storing userSP
+userSP=SP;
+
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13]=SP;
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]*512)-1;
+
+
+//Set the MODE FLAG field in the process table to the system call number which is 21 for Shutdown system Call
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 21;
+
+
+
+alias pid R2;
+pid=[SYSTEM_STATUS_TABLE+1];
+
+//If current process is not shell or current user is not root user Then Return -1
+if(pid!=1 || [PROCESS_TABLE+(PT_ENTRY_SIZE*pid)+3]!=1) then
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+    //Set -1 as Return Value in the user stack. (Address Translation required)
+    [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -1;
+
+    //Switch to user stack
+    SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * PT_ENTRY_SIZE) + 13];
+
+    ireturn;
+
+endif;
+
+
+
+//Commit the changes made in the memory copies of the inode table (along with user table), the root file and the disk free list by storing them back to the disk invoking the Disk Store function of device manager module.
+
+//First Page/Block of Inode + User Table
+multipush(R1,R2);
+R1=1;      //Disk Store function number
+R2=pid;    //Process ID
+R3=59;        //Page Number
+R4=3;        //Block Number
+call MOD_4;
+multipop(R1,R2);
+
+
+//Second Page/Block of Inode + User Table
+multipush(R1,R2);
+R1=1;      //Disk Store function number
+R2=pid;    //Process ID
+R3=60;        //Page Number
+R4=4;        //Block Number
+call MOD_4;
+multipop(R1,R2);
+
+
+//Root file
+multipush(R1,R2);
+R1=1;      //Disk Store function number
+R2=pid;    //Process ID
+R3=62;        //Page Number
+R4=5;        //Block Number
+call MOD_4;
+multipop(R1,R2);
+
+
+//Disk Free List
+multipush(R1,R2);
+R1=1;      //Disk Store function number
+R2=pid;    //Process ID
+R3=61;        //Page Number
+R4=2;        //Block Number
+call MOD_4;
+multipop(R1,R2);
+
+
+halt;
+
+
+
+
+

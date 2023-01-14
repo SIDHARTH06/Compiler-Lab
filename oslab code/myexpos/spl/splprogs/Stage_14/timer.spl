@@ -1,0 +1,50 @@
+//Switch to kernel stack
+
+
+
+//Save the current value of User SP into the corresponding Process Table entry
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
+
+
+// Setting SP to UArea Page number * 512 - 1 (Kernel Stack)
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
+
+
+//Save the user context to the kernel stack
+backup;
+
+
+ //Change the state of the current process in its Process Table entry from RUNNING to READY.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1] * 16 + 4] = READY;   
+
+
+//Loop through the process table entires and increment the TICK field of each process.
+alias loop R0;
+loop=0;
+while(loop<=15)do
+[PROCESS_TABLE+loop*16]=[PROCESS_TABLE+loop*16]+1;
+loop=loop+1;
+endwhile;
+
+
+
+call MOD_5; // invoke  context switch module (Scheduler module)
+
+
+
+//Restore the user context from the kernel stack
+restore;
+
+// set SP to the user SP saved in Process Table, before returning to user mode as it was in running state before so there is user context to be restored
+SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13];  
+
+
+
+//Set the MODE_FLAG in the process table entry to 0.
+[PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 9]=0;
+
+
+
+//switch to user mode
+ireturn;
+

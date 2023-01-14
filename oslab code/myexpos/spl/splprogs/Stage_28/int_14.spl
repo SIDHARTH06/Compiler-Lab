@@ -1,0 +1,263 @@
+//Interrupt 14 Routine : SemLock and SemUnlock
+
+
+
+
+alias sysCall R1;
+alias userSP R2;
+
+//Storing userSP
+userSP=SP;
+
+//Extracting  System Call number from user stack
+sysCall=[([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 13]=SP;
+
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 11]*512)-1;
+
+multipush(R1,R2);
+R1=ACQUIRE_KERN_LOCK;
+call ACCESS_CONTROL; 
+multipop(R1,R2);
+
+
+//SemLock System Call
+if(sysCall==19) then
+
+    //Set the MODE FLAG field in the process table to the system call number which is 19 for SemLock system call
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 9] = 19;
+
+    //Getting Semaphore Descriptor (Argument 1)
+    alias semDesc R3;
+    semDesc=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+
+    alias userAreaPage R4;
+    alias resourceTable R5;
+
+    userAreaPage=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+5*CORE + 1]*PT_ENTRY_SIZE)+11];
+    resourceTable=(userAreaPage*512)+RESOURCE_TABLE_OFFSET;
+
+
+
+    
+    //Checking IF Semaphore Descriptor is invalid
+    if(semDesc<0 || semDesc>7 || [resourceTable+(2*semDesc)]!= SEMAPHORE) then
+
+         //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -1;
+
+        
+
+        goto IReturn;
+
+        // R1=RELEASE_LOCK;
+        // R2=KERN_LOCK;
+        // call ACCESS_CONTROL;
+
+        // //Switch to user stack
+        // SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+        // ireturn;
+    endif;
+
+    alias semTableIndex R6;
+
+    semTableIndex=[resourceTable+(2*semDesc)+1];
+
+    
+
+    //If the requested semaphore is currently locked by some other process, the current process blocks its execution
+    while([SEMAPHORE_TABLE+(4*semTableIndex)]!=-1 && [SEMAPHORE_TABLE+(4*semTableIndex)]!=[SYSTEM_STATUS_TABLE+5*CORE+1]) do
+
+        //Change state to wait semaphore,semTableIndex
+        [PROCESS_TABLE+(PT_ENTRY_SIZE*[SYSTEM_STATUS_TABLE+5*CORE+1])+4]=WAIT_SEMAPHORE;
+        [PROCESS_TABLE+(PT_ENTRY_SIZE*[SYSTEM_STATUS_TABLE+5*CORE+1])+5]=semTableIndex;
+
+        //Call scheduler
+        
+        multipush(R1,R2,R3,R4,R5,R6);
+
+        R1=RELEASE_LOCK;
+        R2=KERN_LOCK;
+        call ACCESS_CONTROL;
+
+
+        call MOD_5;
+
+        R1=ACQUIRE_KERN_LOCK;
+        call ACCESS_CONTROL; 
+
+
+
+        multipop(R1,R2,R3,R4,R5,R6);
+
+
+        
+
+    endwhile;
+
+    
+
+    //Change the Locking PID to PID of the current process in the Semaphore Table .
+    [SEMAPHORE_TABLE+(4*semTableIndex)]=[SYSTEM_STATUS_TABLE+5*CORE+1];  
+
+
+    
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+    //Set 0 as Return Value in the user stack. (Address Translation required)
+    [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = 0; 
+
+    goto IReturn;
+
+    // R1=RELEASE_LOCK;
+    // R2=KERN_LOCK;
+    // call ACCESS_CONTROL;
+
+    // //Switch to user stack
+    // SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+
+    // ireturn;
+
+endif;
+
+
+
+//SemUnlock System Call
+if(sysCall==20) then
+
+    //Set the MODE FLAG field in the process table to the system call number which is 20 for SemUnLock system call
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+5*CORE + 1] * 16 + 9] = 20;
+
+
+    //Getting Semaphore Descriptor (Argument 1)
+    alias semDesc R3;
+    semDesc=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+
+    alias userAreaPage R4;
+    alias resourceTable R5;
+
+    userAreaPage=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+5*CORE + 1]*PT_ENTRY_SIZE)+11];
+    resourceTable=((userAreaPage+1)*512)-16;
+
+
+
+    //Checking IF Semaphore Descriptor is invalid
+    if(semDesc<0 || semDesc>7 || [resourceTable+(2*semDesc)]!=SEMAPHORE) then
+
+         //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -1;
+
+        
+        goto IReturn;
+
+        // R1=RELEASE_LOCK;
+        // R2=KERN_LOCK;
+        // call ACCESS_CONTROL;
+
+        // //Switch to user stack
+        // SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+        // ireturn;
+    endif;
+
+
+    alias semTableIndex R6;
+
+    semTableIndex=[resourceTable+(2*semDesc)+1];
+
+    //If semaphore is locked
+    if([SEMAPHORE_TABLE+(semTableIndex*4)]!=-1) then
+
+        //If current process has not locked the semaphore Return -2
+        if([SEMAPHORE_TABLE+(semTableIndex*4)]!=[SYSTEM_STATUS_TABLE+5*CORE+1]) then
+
+            //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+            [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+            //Set -2 as Return Value in the user stack. (Address Translation required)
+            [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = -2;
+
+            goto IReturn;
+            
+            // R1=RELEASE_LOCK;
+            // R2=KERN_LOCK;
+            // call ACCESS_CONTROL;
+
+            // //Switch to user stack
+            // SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+
+            // ireturn;
+        endif;
+
+
+        //Set the Locking PID to -1. (Unlock the semaphore)
+        [SEMAPHORE_TABLE+(semTableIndex*4)]=-1;
+
+
+        //Loop through the process table and change state to READY for processes in state (WAIT_SEMAPHORE,semTableIndex)
+        alias loop R7;
+        loop=0;
+
+         //wake up processes blocked by the semaphore
+        while(loop<MAX_PROC_NUM) do
+            
+            if([PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]==WAIT_SEMAPHORE && [PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+5]==semTableIndex) then
+                [PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]=READY;
+            endif;
+            
+            loop=loop+1;
+
+        endwhile;
+
+    endif;
+
+    
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+    //Set 0 as Return Value in the user stack. (Address Translation required)
+    [([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512)] = 0; 
+
+
+IReturn:
+
+    R1=RELEASE_LOCK;
+    R2=KERN_LOCK;
+    call ACCESS_CONTROL;
+
+    //Switch to user stack
+    SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+5*CORE + 1] * PT_ENTRY_SIZE) + 13];
+
+    ireturn;
+
+endif;
+
+
+
+
+
+    
+
+
+
+
+

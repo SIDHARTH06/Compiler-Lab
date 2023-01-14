@@ -1,0 +1,33 @@
+Q1.
+
+a) Logical address of next instruction =3000  (IP points to the next instruction)
+
+    Logical Page Number=3000/512=5
+
+    Offset=3000%512=440
+
+    Location of Page Table entry=PTBR+5*2=29696+10=29706
+
+b) Physical memory address=512*100+440=51640
+
+c) IP will be updated to 3080
+
+d) Logical address=4096
+
+    Logical Page number=4096/512=8
+    Offset=0
+    Location of Page table entry=29696+8*2=29712
+
+    Value at 29712 given as 75.
+
+    Physical address=75*512+0=38400
+
+e) Logical address=7000
+
+    Logical Page Number=7000/512=13
+    Offset=7000%512=344
+    Page Number greater than PTLR (PTLR=10)
+
+    So exception
+
+

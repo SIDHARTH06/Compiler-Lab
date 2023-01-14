@@ -1,0 +1,210 @@
+// INT 5 -Routine (Seek,Open,Close)
+
+
+alias sysCall R1;
+alias userSP R2;
+
+//Storing userSP
+userSP=SP;
+
+//Extracting  System Call number from user stack
+sysCall=[([PTBR + 2 * ((userSP - 5) / 512)] * 512) + ((userSP - 5) % 512)];
+
+alias processTableEntry R3;
+processTableEntry=PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * PT_ENTRY_SIZE) ;
+
+
+alias returnValueAddr R4;
+returnValueAddr=([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[processTableEntry + 13]=SP;
+
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([processTableEntry + 11]*512)-1;
+
+
+
+
+//Checking whether it is open system Call
+if(sysCall==2) then
+
+    //Getting the fileName (Argument 1)
+    alias fileName R5;
+    fileName=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+    //Set the MODE FLAG field in the process table to the system call number which is 2 for Open system call
+    [processTableEntry + 9] = 2;
+
+
+    alias index R6;
+    alias userAreaPage R7;
+    alias resourceTable R8;
+
+    index=0;
+    userAreaPage=[processTableEntry+11];
+    resourceTable=(userAreaPage*512)+RESOURCE_TABLE_OFFSET;
+
+    //Checking for free entries in resource table
+    while(index<8 && [resourceTable+(index*2)]!=-1) do
+        index=index+1;
+    endwhile;
+
+
+    //If no free entry, then Return -3.
+    if(index==8) then
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set -3 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] =-3;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+    
+    endif;
+
+
+
+    //Call the open() function from the File Manager module to get the Open File table entry.
+    multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+    R1=3;   //Open Function
+    R2=fileName;    //fileName
+    call MOD_3;     //Calling File Manager module
+    multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+
+
+    //If Open fails, Return the error code.
+    if(R0==-1 || R0==-2) then
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set R0 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] =R0;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+    endif;
+
+
+    //Set the Per-Process Resource Table entry 
+    [resourceTable+(index*2)]=FILE;
+    [resourceTable+(index*2)+1]=R0;     //Setting Open File Table Index
+
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [processTableEntry + 9] = 0;
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    //Return the index of the Per-Process Resource Table entry.
+    [returnValueAddr] = index; 
+
+    ireturn;
+
+endif;
+
+
+
+//Checking whether it is close system Call
+if(sysCall==3) then
+
+
+    //Getting the fileName (Argument 1)
+    alias fileDesc R5;
+    fileDesc=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+
+    //Set the MODE FLAG field in the process table to the system call number which is 3 for Close system call
+    [processTableEntry + 9] = 3;
+
+
+    //If file descriptor is invalid, Return -1.  
+
+    if(fileDesc<0 || fileDesc>7) then
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] =-1;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+
+    endif;
+
+
+    alias userAreaPage R6;
+    alias resourceTable R7;
+    userAreaPage=[processTableEntry+11];
+    resourceTable=(userAreaPage*512)+RESOURCE_TABLE_OFFSET;
+
+    //If the Resource identifier field of the Per Process Resource Table entry is invalid or does not indicate a FILE, Return -1.
+    if([resourceTable+(fileDesc*2)]!=FILE) then
+
+        //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+        [processTableEntry + 9] = 0;
+
+        //Set -1 as Return Value in the user stack. (Address Translation required)
+        [returnValueAddr] =-1;
+
+        //Switch to user stack
+        SP=[processTableEntry + 13];
+
+        ireturn;
+
+
+    endif;
+
+
+    //Get the index of the Open File Table entry from Per-Process Resource Table entry.
+    alias openFileTableIndex R8;
+    openFileTableIndex=[resourceTable+(fileDesc*2)+1];
+
+    //Call the close() function in the File Manager module with the Open File Table index as arguement.
+    multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+    R1=4;       //Function number for close
+    R2=openFileTableIndex;      //Open File Table Index
+    call MOD_3;     //Calling File Manager module
+    multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+
+    //Invalidate the Per-Process Resource Table entry.
+    [resourceTable+(fileDesc*2)]=-1;  //Resource identifier
+    [resourceTable+(fileDesc*2)+1]=-1;  //Index 
+
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * PT_ENTRY_SIZE) + 9] = 0;
+
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    //Return 0
+    [returnValueAddr] = 0; 
+
+    ireturn;
+
+
+endif;
+
+
+
+
+
+
+
+
+

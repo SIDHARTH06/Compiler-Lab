@@ -1,0 +1,378 @@
+//Process Manager Module
+
+//Function number is present in R1 and PID passed as an argument is stored in R2
+alias functionNum R1;
+
+
+
+//Free User Area Page Function
+if(functionNum==2) then
+    alias PID R2;
+    //Obtain the user area page number of process from the process table 
+    alias userAreaPage R3;
+    userAreaPage=[PROCESS_TABLE+(PT_ENTRY_SIZE*PID)+11];
+
+    alias resourceTable R5; 
+    //If the resource is valid and is semaphore,Then invoke Release Semaphore function of resource manager module.
+
+    resourceTable=(userAreaPage*512)+RESOURCE_TABLE_OFFSET;
+    alias loop R4;
+    loop=0;
+
+    alias resourceEntry R6;
+
+    while(loop<8) do
+
+        resourceEntry=resourceTable+(2*loop);
+
+        if([resourceEntry]==SEMAPHORE) then
+            multipush(R1,R2,R3,R4,R5,R6);
+            R1=7;   //Release Semaphore function
+            R3=PID;     //PID
+            R2=[resourceEntry+1]; //Semaphore Table index
+            call MOD_0; //Resource Manager Module
+            multipop(R1,R2,R3,R4,R5,R6);
+        endif;
+
+
+        
+        if([resourceEntry]==FILE) then
+            multipush(R1,R2,R3,R4,R5,R6);
+            R1=4;   //Close file function
+            R2=[resourceEntry+1]; //File Table index
+            call MOD_3; //File Manager Module
+            multipop(R1,R2,R3,R4,R5,R6);
+        endif;
+
+
+
+
+
+        loop=loop+1;
+    endwhile;
+
+
+
+
+
+    //Free the user area page by invoking the Release Page function in memory manager module(MOD_2).
+    multipush(R1,R2,R3,R4,R5,R6);
+    R1=2;       //Function numberof release page
+    R2=userAreaPage;   //Page to be released
+    call MOD_2;            //Calling memory manager module
+    multipop(R1,R2,R3,R4,R5,R6);
+
+    return;   //Return to caller
+endif;
+
+
+
+//Exit Process Function
+if(functionNum==3) then
+    alias PID R2;
+
+    //Invoke the Free Page Table function  of Process Manager Module(This same module)
+    multipush(R1,R2);
+    R1=4;
+    //R2 already contains the PID
+    call MOD_1;          //Calling Process Manager Module(This same module)
+    multipop(R1,R2);
+
+    
+    //Invoke the Free user Area Page function of Process Manager Module(This same module)
+    multipush(R1,R2);
+    R1=2;
+    //R2 already contains the PID
+    call MOD_1;          //Calling Process Manager Module(This same module)
+    multipop(R1,R2);
+
+
+    alias processTableEntry R3;
+    processTableEntry=PROCESS_TABLE+(PT_ENTRY_SIZE*PID);
+
+
+    //Set the state of the process as TERMINATED
+    [processTableEntry+4]=TERMINATED;
+
+    //Checking whether the exit process function is not invoked from  exec system Call
+    if([processTableEntry+9]!=9) then
+
+        //Loop through all process table entries, if there is a process with STATE as tuple (WAIT_PROCESS, current process PID) then change the STATE field to READY.
+        alias loop R4;
+        loop=0;
+
+        alias loopProcessEntry R5;
+
+        while(loop<MAX_PROC_NUM) do
+
+            loopProcessEntry=PROCESS_TABLE+(loop*PT_ENTRY_SIZE);
+
+            if([loopProcessEntry+4]==WAIT_PROCESS && [loopProcessEntry+5]==PID) then
+            [loopProcessEntry+4]=READY;
+            endif;
+
+            //Checking whether any process has pid as parent
+            if([loopProcessEntry+2]==PID) then
+                [loopProcessEntry+2]=-1;      //Process is made orphan
+            endif;
+
+
+            loop=loop+1;
+        endwhile;
+
+
+
+
+
+    endif;
+
+
+
+
+    return; //Return to caller
+endif;
+
+
+//Free Page Table Function
+if(functionNum==4) then
+    alias PID R2;
+    alias processPTBR R3;
+    processPTBR=[PROCESS_TABLE+(PID*PT_ENTRY_SIZE)+14]; //Getting the Process PTBR
+
+    //Invalidate the page table entries for the library pages
+    [processPTBR+0] = -1;
+    [processPTBR+1] = "0000";
+    [processPTBR+2] = -1;
+    [processPTBR+3] = "0000";
+    [MEMORY_FREE_LIST+63]=[MEMORY_FREE_LIST+63]-1;
+    [MEMORY_FREE_LIST+64]=[MEMORY_FREE_LIST+64]-1;
+
+    //For each valid entry in the page table, release the page by invoking the Release Page function and invalidate the entry.
+    alias loop R4;
+    loop=0;
+   
+
+    alias pg R5;
+    pg=processPTBR+4;
+
+
+    while(loop<(PTLR-2)) do
+        //Checking whether the page table entry is valid 
+        if([pg+(loop*2)]!=-1) then
+            //Invoking Release Page
+            multipush(R1,R2,R3,R4,R5);
+            R1=2;   //Release Page Function Number
+            R2=[pg+(loop*2)];  //Page number
+            call MOD_2;     //Calling Memory Manager Module (MOD 2)
+            multipop(R1,R2,R3,R4,R5);
+
+            //Invalidate the entry
+            [pg+(loop*2)]=-1;
+            [processPTBR+5+(loop*2)]="0000";
+        endif;
+        loop=loop+1;
+    endwhile;
+
+    alias diskMapTableEntry R6;
+    diskMapTableEntry=DISK_MAP_TABLE+(PID*10);
+
+    //If there are valid entries for heap and stack in disk map table for the current process invoke release block for those entries
+    //First Heap Page
+    if([diskMapTableEntry+2]!=-1) then
+        multipush(R1,R2,R3,R4,R5,R6);
+        R1=4;                                //Function number for Release Block in Memory Manager module (MOD_2)
+        R3=PID;                              //Storing R3 before R2 because R2 stores PID
+        R2=[diskMapTableEntry+2];     //Storing Block Number (R3 because as R3 has pid)
+        call MOD_2;
+        multipop(R1,R2,R3,R4,R5,R6);
+    endif;
+
+
+    //Second Heap Page
+    if([diskMapTableEntry+3]!=-1) then
+        multipush(R1,R2,R3,R4,R5,R6);
+        R1=4;                                //Function number for Release Block in Memory Manager module (MOD_2)
+        R3=PID;                              //Storing R3 before R2 because R2 stores PID
+        R2=[diskMapTableEntry+3];     //Storing Block Number (R3 because as R3 has pid)
+        call MOD_2;
+        multipop(R1,R2,R3,R4,R5,R6);
+    endif;
+    
+
+    //First Stack Page
+    if([diskMapTableEntry+8]!=-1) then
+        multipush(R1,R2,R3,R4,R5,R6);
+        R1=4;                                //Function number for Release Block in Memory Manager module (MOD_2)
+        R3=PID;                              //Storing R3 before R2 because R2 stores PID
+        R2=[diskMapTableEntry+8];     //Storing Block Number (R3 because as R3 has pid)
+        call MOD_2;
+        multipop(R1,R2,R3,R4,R5,R6);
+    endif;
+
+
+    //Second Stack Page
+    if([diskMapTableEntry+9]!=-1) then
+        multipush(R1,R2,R3,R4,R5,R6);
+        R1=4;                                //Function number for Release Block in Memory Manager module (MOD_2)
+        R3=PID;                              //Storing R3 before R2 because R2 stores PID
+        R2=[diskMapTableEntry+9];     //Storing Block Number (R3 because as R3 has pid)
+        call MOD_2;
+        multipop(R1,R2,R3,R4,R5,R6);
+    endif;
+
+
+    loop=0;
+
+    //Invalidate all the entries of the disk map table.
+    while(loop<10) do
+        [diskMapTableEntry+loop]=-1;
+        loop=loop+1;
+    endwhile;
+
+
+
+
+    return;   //Return to Caller
+endif;
+
+
+//Get PCB entry
+if(functionNum==1) then
+    alias index R2;
+    alias pid R0;
+
+    pid=-1;
+    index=0;
+
+    alias loopProcessEntry R3;
+
+    //Loop through process table entries
+    while(index<MAX_PROC_NUM) do
+        
+        loopProcessEntry=PROCESS_TABLE+(index*PT_ENTRY_SIZE);
+
+        //Check whether state is terminated
+        if([loopProcessEntry+4]==TERMINATED) then
+            
+            //setting pid field to index
+            [loopProcessEntry+1]=index;
+
+            //set the state to allocated
+            [loopProcessEntry+4]=ALLOCATED;
+
+            //Set ptbr field
+            [loopProcessEntry+14]=PAGE_TABLE_BASE+(20*index);
+
+            //Set ptlr field
+            [loopProcessEntry+15]=10;
+
+            pid=index;
+            return;
+        endif;
+
+        index=index+1;
+    endwhile;
+
+
+    return;   //(Returns -1)
+endif;
+
+
+//Kill All function
+if(functionNum==5) then
+
+    //Lock all files to ensure that no processes are in the middle of a file operation 
+    
+    alias pid R3;
+    pid=R2;
+    
+    alias loop R2;
+    loop=0;
+
+  
+    
+    while(loop<MAX_FILE_NUM) do
+
+        //For each valid entry in the Inode table	
+        if([INODE_TABLE+(loop*16)+1]!=-1) then
+            //Acquire lock on the file by calling the acquire_inode() function in the Resource Manager module.
+            multipush(R1,R2,R3);
+            R1=4;   //Acquire Inode
+            R2=loop;      //Inode index
+            R3=pid;     //pid 
+            call MOD_0;     //Resource Manager Module
+            multipop(R1,R2,R3);
+        endif;
+
+        loop=loop+1;
+    endwhile;
+
+      
+   
+
+    loop=2;
+    //For each pid from 2 to MAX_PROC_NUM - 1 (PID 0 is idle and 1 is init )
+
+    while(loop<MAX_PROC_NUM) do
+
+        if(loop==SWAPPER_DAEMON) then
+            loop=loop+1;
+            continue;
+        endif;
+
+        //If loop is not pid of current process  and the process is not terminated
+        if(loop!=pid && [PROCESS_TABLE+(loop*PT_ENTRY_SIZE)+4]!=TERMINATED) then
+           
+            //Call exit_process() function from the Process Manager Module.
+            multipush(R1,R2,R3);
+            R1=3;       //Exit Process Function
+            R2=loop;    //pid
+            call MOD_1;     //Process Manager Module
+            multipop(R1,R2,R3);
+
+        endif;
+
+
+        loop=loop+1;
+    endwhile;
+
+
+
+   
+
+
+    loop=0;
+
+
+    while(loop<MAX_FILE_NUM) do
+
+        //For each valid entry in the Inode table	
+        if([INODE_TABLE+(loop*16)+1]!=-1) then
+            //Release lock on the file by calling the release_inode() function in the Resource Manager module.
+            multipush(R1,R2,R3);
+            R1=5;   //Release Inode
+            R3=pid;     //pid 
+            R2=loop;      //Inode index
+            call MOD_0;     //Resource Manager Module
+            multipop(R1,R2,R3);
+        endif;
+
+        loop=loop+1;
+    endwhile;
+
+
+
+    return;
+
+
+endif;
+
+
+
+
+
+
+
+
+    
+

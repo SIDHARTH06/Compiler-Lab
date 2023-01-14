@@ -1,0 +1,14 @@
+alias x R0;
+alias sum R1;
+
+x=1;
+sum=0;
+
+while(x<=20) do
+    sum=sum+x*x;
+    x=x+1;
+endwhile;
+
+print sum;
+
+

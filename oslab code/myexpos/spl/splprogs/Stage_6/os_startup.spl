@@ -1,0 +1,50 @@
+//Load INIT program to memory
+loadi(65,7);
+loadi(66,8);
+
+
+//Load INT10 module from disk to memory
+
+loadi(22,35);
+loadi(23,36);
+
+//Load exception handler routine from disk to memory
+
+loadi(2, 15);
+loadi(3, 16);
+
+
+//Setting up Page tables
+
+PTBR = PAGE_TABLE_BASE;
+PTLR = 9;   // Pages 0 to 8
+ 
+
+// [PTBR+0] = 65;
+// [PTBR+1] = "0100";
+// [PTBR+2] = 66;
+// [PTBR+3] = "0100";        These are commented
+// [PTBR+4] = 76;
+// [PTBR+5] = "0110";
+// [PTBR+6] = 76;
+// [PTBR+7] = "0110";
+
+
+
+
+[PTBR+8] =  65;
+[PTBR+9] =  "0100";
+[PTBR+10] = 66;
+[PTBR+11] = "0100";
+[PTBR+16] = 76;
+[PTBR+17] = "0110";
+
+
+
+
+
+
+[76*512] = 2048;  //Setting top of the stack to be 2048 , so the IP can be set to 2048
+SP = 8*512;
+
+ireturn;

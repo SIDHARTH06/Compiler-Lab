@@ -1,0 +1,19 @@
+load --init /home/anonymous/OS_lab/Assignments/Stage_17/execute.xsm
+load --os   /home/anonymous/OS_lab/Assignments/Stage_13/os_startup_st13.xsm
+load --module 7  /home/anonymous/OS_lab/Assignments/Stage_18/boot_module.xsm
+load --int=10  /home/anonymous/OS_lab/Assignments/Stage_14/int_10.xsm
+load --module 5 /home/anonymous/OS_lab/Assignments/Stage_14/mod_5.xsm
+load --int=timer  /home/anonymous/OS_lab/Assignments/Stage_14/timer.xsm
+load --idle /home/anonymous/OS_lab/Assignments/Stage_12/idle.xsm
+load --library /home/anonymous/OS_lab/myexpos/expl/library.lib
+load --module 0 /home/anonymous/OS_lab/Assignments/Stage_18/mod_0.xsm
+load --module 4 /home/anonymous/OS_lab/Assignments/Stage_18/mod_4.xsm
+load --int=7 /home/anonymous/OS_lab/Assignments/Stage_15/int7.xsm
+load --int=console /home/anonymous/OS_lab/Assignments/Stage_17/console_int.xsm
+load --int=6 /home/anonymous/OS_lab/Assignments/Stage_16/int6.xsm
+load --int=9  /home/anonymous/OS_lab/Assignments/Stage_18/int9.xsm
+load --module 1 /home/anonymous/OS_lab/Assignments/Stage_17/mod_1.xsm
+load --module 2 /home/anonymous/OS_lab/Assignments/Stage_18/mod_2.xsm
+load --int=disk /home/anonymous/OS_lab/Assignments/Stage_18/disk_int.xsm
+rm odd.xsm
+load --exec  /home/anonymous/OS_lab/Assignments/Stage_17/odd.xsm

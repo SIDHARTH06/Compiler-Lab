@@ -1,0 +1,9 @@
+1.Modules in eXpOS are used to perform certain logical tasks, which are performed frequently.
+2.These modules run in kernel mode and are invoked only from the kernel mode. A user program can never invoke a module directly. Modules can be invoked from interrupt routines, other modules or the OS startup code.
+3.As modules execute in kernel mode, the kernel stack of the currently scheduled process is used as the caller-stack for module invocation.
+
+//Read from site
+
+1.Each SPL System Call Handler/Interrupt Handler/Module is designed to occupy a maximum of two pages of continuous memory in the XSM machine.
+2.Protected Mode refers to user mode.
+3.There are no parameters or function code (as there are no functions) to be passed in case of boot module.

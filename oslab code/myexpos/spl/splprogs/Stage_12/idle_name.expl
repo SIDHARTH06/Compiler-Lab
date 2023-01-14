@@ -1,0 +1,16 @@
+int main()
+{
+	decl
+		int a;
+		str n;
+		int temp;
+	enddecl
+	begin
+		n="Alen";
+		while(1==1) do   //infinite loop
+			a=1;
+			temp=exposcall("Write",-2,n);
+		endwhile;
+		return 0;
+	end
+}

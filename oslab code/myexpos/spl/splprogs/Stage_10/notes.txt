@@ -1,0 +1,26 @@
+:::::::::::::::::::::::::: Stage 10 ::::::::::::::::::::::::::::::::::::::
+
+1.A system call is an OS routine that can be invoked from a user program.
+
+2.Each system call routine is written inside some software interrupt handler.
+
+3.The write system call of eXpOS is coded inside the INT 7 handler.
+
+4.An interrupt handler may contain code for several system calls.
+
+5.To invoke a system call from a program, the program must pass the system call number (along with other arguments to the system call) and invoke the corresponding software interrupt using the INT instruction. The arguments and the system call number are passed through the user program's stack.
+
+6.When a program invokes a system call, the system switches from user mode to kernel mode.
+
+7.Write system call is (system call number 5) programmed inside the INT 7 handler.
+
+8.The file descriptor for terminal is -2
+
+9.By convention, all system calls have 3 arguments. As we do not have a third argument in this case, push any register, say R0 on to the stack.In this case the last argument will be ignored by the system call handler.
+
+10.MODE FLAG field in the process table is used to indicate whether the current process is executing in a system call, exception handler or user mode.
+
+
+
+
+Note Regarding XSM comments: XSM comments must be  in the same line as that of the code

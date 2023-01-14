@@ -1,0 +1,62 @@
+::::::::::::::::::Stage 6:::::::::::::::::::::::::
+
+
+
+1.The virtual address space of a user mode program is a contiguous address space starting from 0 to 512*PTLR-1. 
+
+2.Software Interrupts (traps) are the mechanisms by which user mode programs can transfer control to the code that runs in the kernel mode.
+
+3.Every user mode program has an associated page table which maps its virtual address space to the machine's physical address space.
+
+4.Location of page table entry = PTBR + 2 x (Logical Address / 512)
+
+5.Physical Page Number = [ Location of page table entry ]
+
+6.offset = Logical Address % 512
+
+7.Physical Address = Physical Page Number x 512 + offset
+
+8.PUSH and other unprivileged instructions have a different behaviour when executed in unprivileged mode rather than in priveledged mode.
+
+9.The machine assumes that the PTBR register holds the base(starting) address of the page table in memory.
+
+10. The OS maintains a seperate page table for each program that stores the physical page number to which each logical page of the program is mapped to.
+
+11. Note that the page table is a "meta data" about a program maintained by the OS. The OS stores the table outside the address space of the process and the process has no access to it.
+
+12.  XSM stipulates that the address space limit of an application must be a multiple of XSM page size=512.
+
+13. Each page table entry requires two memory words 
+
+14. The Reference bit and the Dirty bit are set by the machine.
+
+15. The dirty bit is set if the instruction modifies the contents of the page. 
+
+16. When the application is executing, if an address is generated accessing some logical page, then the reference bit of the page is set automatically to 1 by the machine.
+
+17. IRET instruction that allows a mode switch from privileged mode to unprivileged mode
+
+18. INT => unpriveldged to priveledged
+
+19.The eXpOS ABI of our concern stipulates that logical pages 8 and 9 of an application must be allocated for the stack
+
+20. An eXpOS compatible XEXE executable file must contain these instructions listed in sequential order. But before the code, the file must contain an eight-word header.
+
+21.The first word (word 0) must be set to value 0.
+
+22. The second word (word 1) is called entry point. This word must contain the logical address of the first instruction to be executed when the application is run. The values of the remaining six words can be ignored.
+
+23.The ExpOS kernel that you design sets the address space of every application to 10 pages.
+
+24.eXpOS ABI stipulates that an XEXE executable file (including the header) must fit into four pages of memory
+
+25.The first user program which is executed is called the INIT program *. The eXpOS design stipulates that the INIT program must be stored in blocks 7 and 8 of the XSM disk.
+
+26.In OS jargon, a user program in execution is called a “process”.
+
+27.The eXpOS memory organization stipulates that the page tables are stored from memory address 29696
+
+28. The IRET instruction does the following:
+    i)  The privilege mode is changed from KERNEL to USER mode.
+    ii) The instruction pointer is set to the value at the top of the user stack
+    iii)The value of SP is decremented by 1

@@ -1,0 +1,238 @@
+//Exec System Call - INT 9  (System Call Number 9)
+
+//Save the value of register SP as userSP
+alias userSP R1;
+userSP=SP;
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13]=userSP;
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]*512)-1;
+
+//Set the MODE FLAG field in the process table to the system call number which is 9 for exec system call
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 9;
+
+//Get the file name (Argument 1) from the user stack.
+//Convert Logical Address to Physical Address
+alias physicalPageNum R2;
+alias offset R3;
+alias fileNamePhysicalAddr R4;
+physicalPageNum = [PTBR + 2 * ((userSP - 4)/ 512)];
+offset = (userSP - 4) % 512;
+fileNamePhysicalAddr = (physicalPageNum * 512) + offset;
+alias fileName R5;
+fileName=[fileNamePhysicalAddr];
+
+//Search the memory copy of the inode table for the file
+alias inodeIndex R6;
+inodeIndex=0;
+
+while(inodeIndex<MAX_FILE_NUM && [INODE_TABLE+(16*inodeIndex)+1]!=fileName)do
+    inodeIndex=inodeIndex+1;
+endwhile;
+
+
+
+//If the file is not present or file is not in XEXE format Return to user mode with Return value -1 indicating failure (after setting up MODE FLAG and the user stack).
+if(inodeIndex>MAX_FILE_NUM || [INODE_TABLE+(16*inodeIndex)]!=EXEC) then
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+
+    alias physicalAddrRetVal R7;
+	physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+	[physicalAddrRetVal] = -1;
+
+    SP=userSP;
+    ireturn;
+endif;
+
+
+
+// Call exit process function from the Process Manager module
+multipush(R1,R2,R3,R4,R5,R6,R7);  //Saving register Context
+R1=3;  //Function number of exit process
+R2=[SYSTEM_STATUS_TABLE + 1];           //PID of the current process
+call MOD_1;                             //Calling Process Manager Module
+
+//Ignore contents of R0 as nothing is returned
+multipop(R1,R2,R3,R4,R5,R6,R7); //restoring Context
+
+alias userAreaPage R8;
+
+//Get User Area Page
+userAreaPage=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]; 
+
+//Reclaim the same page by incrementing the memory free list entry of user area page
+[MEMORY_FREE_LIST+userAreaPage]=[MEMORY_FREE_LIST+userAreaPage]+1;  
+
+//Decrement the MEM_FREE_COUNT field in the system status table
+[SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
+
+
+//Initializing Per Process Resource Table in User Area Page
+alias PerProcessTable R9;
+alias loop R10;
+
+loop=0;
+PerProcessTable=((userAreaPage+1)*512)-16;
+
+while(loop<16) do
+    [PerProcessTable+loop]=-1;
+    loop=loop+1;
+endwhile;
+
+
+
+
+
+
+//Set the value of SP to beginning of the kernel stack.
+SP=(userAreaPage*512)-1;
+
+//Update the STATE field to RUNNING 
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 4]=RUNNING;
+//Store inode index in inode index field
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 7]=inodeIndex;
+
+//Page Table For New Process (Same Page Table will be used by the process , so no change in PTBR)
+
+//Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+[MEMORY_FREE_LIST+63]=[MEMORY_FREE_LIST+63]+1;
+[MEMORY_FREE_LIST+64]=[MEMORY_FREE_LIST+64]+1;
+
+//Invalidating Page Table Entries for Heap
+
+//Heap
+[PTBR+4]=-1;
+[PTBR+5] = "0000";
+[PTBR+6]=-1;
+[PTBR+7] = "0000";
+
+
+
+
+
+//Calling Memory Manager Module
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);  //Saving register Context
+R1=1;    //Function number of Get Free Page in Memory Manager Module
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+
+
+
+
+//Allocating first Stack Page
+[PTBR+16] = R0;
+[PTBR+17] = "0110";
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);  //Saving register Context
+R1=1;    //Function number of Get Free Page in Memory Manager Module
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+
+
+//Allocating second Stack Page
+[PTBR+18] = R0;
+[PTBR+19] = "0110";
+
+
+
+
+
+//Invoke Get Code Page Function in Memory Manager Module
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);  //Saving register Context
+R1=5;   //Function Number
+R2=[INODE_TABLE+(16*inodeIndex)+8];     //First Block Number of the code
+call MOD_2;     //Memory Manager Module
+
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);  //Saving register Context
+
+
+//Page Table Entries for the Code area
+
+//For first Page
+[PTBR+8]=R0;
+[PTBR+9]="0100";
+
+
+//Invalidating Remaining Pages
+loop=1;
+
+while(loop<4) do
+    [PTBR+8+2*loop]=-1;
+    [PTBR+9+2*loop]="0000";
+    loop=loop+1;
+endwhile;
+
+
+//Initialize the disk map table of the process
+loop=0;
+
+alias pid R11;
+pid=[SYSTEM_STATUS_TABLE+1];
+
+//Initializing the code entries of disk map table
+while(loop<4) do
+    [DISK_MAP_TABLE+(pid*10)+4+loop]=[INODE_TABLE+(16*inodeIndex)+8+loop];            //Disk Map Table has 10 entries
+    loop=loop+1;
+endwhile;
+
+
+//Initializing heap area of disk map table to -1
+[DISK_MAP_TABLE+(pid*10)+2]=-1;
+[DISK_MAP_TABLE+(pid*10)+3]=-1;
+
+//Initializing Stack area of disk map table to -1
+[DISK_MAP_TABLE+(pid*10)+8]=-1;
+[DISK_MAP_TABLE+(pid*10)+9]=-1;
+
+
+
+
+//Store the entry point IP value on top of the user stack.
+[[PTBR+16]*512]=[[PTBR+8]*512+1];
+
+//Change SP to user stack
+SP=8*512;
+
+//Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+
+
+//Return to user mode
+ireturn;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

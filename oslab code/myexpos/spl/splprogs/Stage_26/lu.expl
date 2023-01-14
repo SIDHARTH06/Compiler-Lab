@@ -1,0 +1,26 @@
+//Displays the names of all the users in the system.
+
+int main(){
+
+
+    decl
+        int temp,userID,username;       //username is int , if set as str shows error
+    enddecl
+
+    begin
+        userID=0;
+        while(userID<16) do         //MAX_USER_NUM=16
+            username=exposcall("Getuname",userID);
+            if(username!=-1) then
+                temp=exposcall("Write",-2,username);
+            endif;
+            userID=userID+1;
+        endwhile;
+
+        return 0;
+
+    end
+
+
+
+}

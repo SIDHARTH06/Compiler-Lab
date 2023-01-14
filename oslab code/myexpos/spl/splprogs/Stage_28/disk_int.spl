@@ -1,0 +1,40 @@
+//Disk Interrupt Handler
+
+
+
+//Store the SP value in the UPTR field in the process table entry of the currently running process.
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13]=SP;      
+
+//Switch to the kernel stack
+SP=([PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11]*512)-1;
+
+//Save the user context to the kernel stack
+backup;
+
+//Set the STATUS field in the Disk Status table to 0 indicating that disk is no longer busy.
+[DISK_STATUS_TABLE]=0;
+
+
+alias loop R0;
+
+loop=0;
+
+while(loop<MAX_PROC_NUM) do
+    if([PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]==WAIT_DISK) then
+        [PROCESS_TABLE+(PT_ENTRY_SIZE*loop)+4]=READY;
+    endif;
+    loop=loop+1;
+endwhile;
+
+
+//Restore the user context from the kernel stack
+restore;
+
+//Change to user stack
+SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];  
+
+
+
+//Change to user mode
+ireturn;
+

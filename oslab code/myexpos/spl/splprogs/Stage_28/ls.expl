@@ -1,0 +1,42 @@
+//ls shell utility (List all files)
+
+int main(){
+
+    decl
+        int temp,fileDesc;
+        str data;
+    enddecl
+
+        
+    begin
+
+        fileDesc=exposcall("Open","root");
+        while(1==1) do
+
+            temp=exposcall("Read",fileDesc,data);
+
+            if(temp==-2) then
+                break;
+            endif;
+
+            //Print filename only If it exists
+            if(data!="-1") then   
+                temp=exposcall("Write",-2,data);
+            endif;
+
+            temp=exposcall("Seek",fileDesc,7);      //Offset of 7 because root file has 8 attributes (increment of one is already done )
+
+
+        endwhile;
+
+
+        temp=exposcall("Close",fileDesc);
+
+        return 0;
+
+
+    end
+
+
+
+}

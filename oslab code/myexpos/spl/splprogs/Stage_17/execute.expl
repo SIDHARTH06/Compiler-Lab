@@ -1,0 +1,20 @@
+//Write an ExpL program to read the name of program from the console and execute that program using exec system call.
+
+int main()
+{
+
+    decl
+        str name;
+        int temp;
+    enddecl
+
+    begin
+        temp=exposcall("Write",-2,"Enter name");
+        temp=exposcall("Read",-1,name);
+        
+        temp=exposcall("Exec",name);
+        return 0;
+    end
+
+
+    }

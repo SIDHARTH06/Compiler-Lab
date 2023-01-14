@@ -1,0 +1,3 @@
+load --os /home/anonymous/OS_lab/Assignments/Stage_7/os_startup_st7.xsm
+load --init /home/anonymous/OS_lab/Assignments/Stage_7/squares_abi.xsm
+load --int=10  /home/anonymous/OS_lab/myexpos/spl/spl_progs/halt_prog.xsm

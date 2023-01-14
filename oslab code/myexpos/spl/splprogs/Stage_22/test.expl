@@ -1,0 +1,21 @@
+int main(){
+
+    decl
+        int temp,semid;
+    enddecl
+
+    begin
+        semid= exposcall("Semget");
+        // breakpoint;
+        temp = exposcall("SemLock", semid);
+        // breakpoint;
+        temp = exposcall("SemUnLock", semid);
+        // breakpoint;
+        temp = exposcall("Semrelease", semid);
+        // breakpoint;
+
+        return 0;
+    end
+
+
+}

@@ -1,0 +1,69 @@
+decl
+        int n,temp,var,a[50],swp,i,j;
+       
+enddecl
+
+int main()
+{
+    
+
+    begin
+        
+        temp=exposcall("Write",-2,"Enter number");
+        temp=exposcall("Read",-1,n);
+        temp=exposcall("Write",-2,"Enter values");
+        var=0;
+
+        while(var<n)do
+        temp=exposcall("Read",-1,a[var]);
+        var=var+1;
+        endwhile;
+
+        i=0;
+
+        //Bubble Sort
+        while(i<(n-1)) do
+
+            j=0;
+
+            while(j<(n-i-1)) do
+
+                if(a[j]>a[j+1]) then
+                    swp=a[j];
+                    a[j]=a[j+1];
+                    a[j+1]=swp;
+                endif;
+
+                j=j+1;
+            endwhile;
+
+            i=i+1;
+
+        endwhile;
+
+
+        //Printing
+
+        temp=exposcall("Write",-2,"Sorted Array:");
+
+        var=0;
+
+        while(var<n)do
+        temp=exposcall("Write",-2,a[var]);
+        var=var+1;
+        endwhile;
+        
+            
+
+
+
+
+
+
+        return 0;
+
+    end
+
+
+
+}

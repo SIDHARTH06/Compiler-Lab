@@ -1,0 +1,43 @@
+//Read from a file
+int main(){
+    
+    decl
+        str file,data;
+        int temp,fileDesc;
+    enddecl
+
+
+    begin
+
+        temp=exposcall("Write",-2,"Enter name");
+        temp=exposcall("Read",-1,file);
+
+        fileDesc=exposcall("Open",file);
+
+        while(1==1) do
+            temp=exposcall("Read",fileDesc,data);
+
+            if(temp==-2) then
+                break;
+            endif;
+
+            temp=exposcall("Write",-2,data);
+        endwhile;
+
+
+
+        temp=exposcall("Close",fileDesc);
+        
+
+
+
+        return 0;
+
+
+
+    end
+
+
+
+
+}

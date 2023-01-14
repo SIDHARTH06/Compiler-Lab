@@ -1,0 +1,137 @@
+//Login System Call  (Sys Call number 27)
+
+//Save the value of register SP as userSP
+alias userSP R1;
+userSP=SP;
+
+alias pid R2;
+pid=[SYSTEM_STATUS_TABLE+1];
+
+alias processTableEntry R3;
+processTableEntry=PROCESS_TABLE + (pid * PT_ENTRY_SIZE);
+
+
+//Set the MODE FLAG field in the process table to the system call number which is 27 for Login system call
+[processTableEntry + 9] = 27;
+
+
+//Save the value of SP in the user SP field of Process Table entry of the process.
+[processTableEntry+ 13]=userSP;
+
+//Set the value of SP to beginning of the kernel stack.
+SP=([processTableEntry + 11]*512)-1;
+
+
+alias returnAddr R4;
+returnAddr=([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+
+
+
+
+//If PID of the current process is not 1, return -2.
+if(pid!=1) then
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [processTableEntry + 9] = 0;
+
+    //Set -2 as Return Value in the user stack. (Address Translation required)
+    [returnAddr] = -2;
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    ireturn;
+
+
+endif;
+
+
+//Getting the Username (Argument 1)
+alias username R5;
+username=[([PTBR + 2 * ((userSP - 4) / 512)] * 512) + ((userSP - 4) % 512)];
+
+//Getting the password (Argument 2)
+alias password R6;
+password = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+
+
+alias userID R7;
+userID=0;
+
+//Get the User Table entry curresponding to the username.
+while(userID<MAX_USER_NUM && [USER_TABLE+(userID*2)]!=username) do
+    userID=userID+1;
+endwhile;
+
+//If an entry does not exist, return -1.
+if(userID==MAX_USER_NUM) then
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [processTableEntry + 9] = 0;
+
+    //Set -1 as Return Value in the user stack. (Address Translation required)
+    [returnAddr] = -1;
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    ireturn;
+
+endif;
+
+
+//Use the encrypt statement to encrypt the password supplied as input.
+encrypt password;
+
+
+//If the encypted input password does not match the ENCRYPTED PASSWORD field in the user table entry, return -1.
+if(password!=[USER_TABLE+(userID*2)+1]) then
+
+    //Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+    [processTableEntry + 9] = 0;
+
+    //Set -1 as Return Value in the user stack. (Address Translation required)
+    [returnAddr] = -1;
+
+    //Switch to user stack
+    SP=[processTableEntry + 13];
+
+    ireturn;
+
+endif;
+
+
+//In the process table entry for the shell process, set STATE as CREATED and USERID as that of the user who is logging in.
+alias shellProcess R8;
+shellProcess=PROCESS_TABLE+(2*PT_ENTRY_SIZE);
+[shellProcess+4]=CREATED;
+[shellProcess+3]=userID;
+
+
+//Set the state of the current process in it's process table entry as (WAIT_PROCESS, 2) /* Login waits for shell to exit */
+[processTableEntry+4]=WAIT_PROCESS;
+[processTableEntry+5]=2;
+
+//In system status table, set the CURRENT_USER_ID as that of the user who is logging in.
+[SYSTEM_STATUS_TABLE]=userID;
+
+
+//Invoke the context_switch() function in the Scheduler Module.
+multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+call MOD_5;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+
+
+
+//Reset the MODE FLAG field in the process table to 0. Value 0 indicates that process is running in user mode.
+[processTableEntry + 9] = 0;
+
+
+//Switch to user stack of process
+SP=[processTableEntry + 13];
+
+ireturn;    //Return to user mode
+
+
+
+

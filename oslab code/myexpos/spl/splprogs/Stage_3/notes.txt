@@ -1,0 +1,20 @@
+::::::::::::::::::Stage 3:::::::::::::::::::::::::
+
+
+1. Memory is organized as a sequence of pages.Each page is a sequence of 512 words.
+
+2. Total number of memory pages available is 128.
+
+3. So total 128*512=65536 words of storage
+
+4. The memory is word addressable
+
+5. When the machine is executing in privileged mode, a memory address “N” between 0 and 65535 refers to the word with offset (N mod 512) in page number (N div 512).
+
+6. The fact that both page-size and block-size are the same makes disk to memory transfer easy in XSM. In real machines, this is normally not the case and the disk access routines have to do the necessary size mappings.
+
+7. Every instruction in XSM is 2 words long
+
+8. CPU of XSM machine consists of 20 general purpose registers R0-R19, each of which can store an integer or a string
+
+9. The XSM simulator given to you is an assembly language interpeter for XSM. Hence, it is possible to load and run assembly language programs on the simulator (unlike real systems where binary programs need to be supplied).

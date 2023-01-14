@@ -1,0 +1,75 @@
+type
+
+node{
+    int key;
+    node next;
+}
+
+endtype
+
+
+
+int main(){
+
+    decl
+
+        int n,temp,var,t;
+        node head,tempnode;
+
+    enddecl
+
+
+    begin
+
+        temp=initialize();    //To Intialise the heap.
+
+        head=alloc();
+        tempnode=head;
+
+        temp=exposcall("Write",-2,"Enter N");
+        temp=exposcall("Read",-1,n);
+
+        var=0;
+
+        temp=exposcall("Write",-2,"Enter values");
+
+        while(var<n) do
+            temp=exposcall("Read",-1,t);
+            tempnode.next=alloc();
+            tempnode.next.key=t;
+
+            tempnode=tempnode.next;
+            var=var+1;
+        endwhile;
+
+
+        
+        tempnode.next=null;     //Ending the Linked list
+
+        head=head.next;
+
+        tempnode=head;
+
+        temp=exposcall("Write",-2,"Output:");
+
+        while(tempnode!=null) do
+
+            temp=exposcall("Write",-2,tempnode.key);
+            tempnode=tempnode.next;
+           
+
+        endwhile;
+
+
+
+
+    return 0;
+
+    end
+
+
+
+
+
+
+}

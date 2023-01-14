@@ -1,0 +1,248 @@
+//loadi(mem,disk)
+
+
+//Load INT 11 (Getpid, Getppid, Wait, Signal)
+loadi(24,37);
+loadi(25,38);
+
+//Load INT 15 (Shutdown)
+loadi(32,45);
+loadi(33,46);
+
+
+//Load INT 8 (Fork)
+loadi(18,31);
+loadi(19,32);
+
+//Load Disk Free List
+loadi(61,2);
+
+
+//Load Disk Interrupt Routine
+loadi(6,19);
+loadi(7,20);
+
+
+//Load INT 9(Exec system Call)
+loadi(20,33);
+loadi(21,34);
+
+//Load module 1 (Process Manager)
+loadi(42,55);
+loadi(43,56);
+
+//Load module 2 (Memory Manager)
+loadi(44,57);
+loadi(45,58);
+
+//Load inode user table
+loadi(59,3);
+loadi(60,4);
+
+
+
+
+//Load Console Interrupt handler
+loadi(8,21);
+loadi(9,22);
+
+//Load INT 6 (READ)
+loadi(14,27);
+loadi(15,28);
+
+
+
+//Load Module 0 to memory (Resource manager module)
+loadi(40,53);
+loadi(41,54);
+
+
+//Load Module 4 to memory (Device Manager Module)
+loadi(48,61);
+loadi(49,62);
+
+
+//Load Module 5 to memory (Scheduler Module)
+loadi(50,63);
+loadi(51,64);
+
+
+
+//Load INIT program to memory (Odd Program)(mem,disk)
+loadi(65,7);
+loadi(66,8);
+
+
+
+
+
+//Load Timer Interrupt routine from disk blocks 17 and 18 to memory pages 4 and 5
+
+loadi(4,17);
+loadi(5,18);
+
+
+
+
+
+
+//Load INT10 (exit) module from disk to memory
+
+loadi(22,35);
+loadi(23,36);
+
+
+
+//Load exception handler routine from disk to memory
+
+loadi(2,15);
+loadi(3,16);
+
+
+
+//Load Library Code from disk to memory
+
+loadi(63,13);
+loadi(64,14);
+
+
+
+//Load INT 7 (write) from disk to memory.
+loadi(16,29);
+loadi(17,30);
+
+
+// For INIT Process
+
+PTBR = PAGE_TABLE_BASE+20;    //For INIT Process
+
+//Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+//Heap
+[PTBR+4] = 78;
+[PTBR+5] = "0110";
+[PTBR+6] = 79;
+[PTBR+7] = "0110";
+
+//Code, The code segment consists of four pages
+[PTBR+8] = 65;
+[PTBR+9] = "0100";
+[PTBR+10] = 66;
+[PTBR+11] = "0100";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+//Stack
+[PTBR+16] = 76;
+[PTBR+17] = "0110";
+[PTBR+18] = 77;
+[PTBR+19] = "0110";
+
+
+
+
+// Process Table entries For INIT Process
+//The process table entry for INIT process starts at PROCESS_TABLE+16
+[PROCESS_TABLE + 27] = 80;          //Set the User Area page number in the Process Table entry of the current process.
+//As we are using the second Process Table entry, the PID will be 1. eXpOS kernel is expected to store the PID in the PID field of the process table.
+[PROCESS_TABLE + 17] = 1;           //Setting PID for INIT
+[PROCESS_TABLE + 20] = CREATED;     //Setting state for INIT to CREATED as IDLE Process is scheduled first
+[PROCESS_TABLE + 29] = 8*512;       //UPTR For INIT Process
+[PROCESS_TABLE + 28] = 0;            //KPTR for INIT
+[PROCESS_TABLE + 30] = PAGE_TABLE_BASE+20;      //PTBR Field for INIT Process
+[PROCESS_TABLE + 31] = 10;           //PTLR Field for INIT Process
+
+
+[76*512] = [65 * 512 + 1];  // Storing the entry point of the code to the top of the stack of the INIT Process
+
+
+
+
+
+
+
+
+
+//Setting State field of all other remaining processes in process table entry to TERMINATED
+// Maximum number of Processes in eXpos is 16 and number of attributes in a single entry is also PT_ENTRY_SIZE which is 16
+alias pid R0;
+
+pid=2;
+
+while(pid<=15) do
+    [PROCESS_TABLE+PT_ENTRY_SIZE*pid+4]=TERMINATED;
+    pid=pid+1;
+endwhile;
+
+
+
+//Initialize the STATUS field in the Terminal Status table as 0.
+[TERMINAL_STATUS_TABLE]=0;
+
+
+//Initialize the memory free list with value 1 for pages used and 0 for free pages.
+alias loop R0;
+loop=0;
+
+while(loop<83) do
+    [MEMORY_FREE_LIST+loop]=1;
+    loop=loop+1;
+endwhile;
+
+while(loop<MAX_MEM_PAGE) do
+    [MEMORY_FREE_LIST+loop]=0;
+    loop=loop+1;
+endwhile;
+
+
+//Initialize the field WAIT_MEM_COUNT to 0
+[SYSTEM_STATUS_TABLE+3]=0;
+//Initialize MEM_FREE_COUNT to number of free pages.
+[SYSTEM_STATUS_TABLE+2]=45;
+
+
+
+//Initialize the STATUS field in the Disk Status Table to 0.
+[DISK_STATUS_TABLE]=0;
+
+
+
+//Initializing Per Process Resource Table in User Area Page of init process
+alias PerProcessTable R1;
+
+
+loop=0;
+PerProcessTable=((80+1)*512)-16;  //User Area Page of Init process is 80
+
+while(loop<16) do
+    [PerProcessTable+loop]=-1;
+    loop=loop+1;
+endwhile;
+
+
+//Initialize Disk Map Table entries for INIT Process
+
+//For Heap
+[DISK_MAP_TABLE+12]=-1;
+[DISK_MAP_TABLE+13]=-1;
+
+//For Code
+[DISK_MAP_TABLE+14]=7;
+[DISK_MAP_TABLE+15]=8;
+[DISK_MAP_TABLE+16]=-1;
+[DISK_MAP_TABLE+17]=-1;
+
+//For Stack
+[DISK_MAP_TABLE+18]=-1;
+[DISK_MAP_TABLE+19]=-1;
+
+
+
+
+return;

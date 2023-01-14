@@ -109,6 +109,7 @@
 	int yylex(void);
     int yyerror();
 	regs[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	extern FILE *yyin;
 	nooffreereg=16;
 
 
@@ -132,12 +133,12 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 11 "exprtree.y"
+#line 12 "exprtree.y"
 {
 	struct tnode *no;
 }
 /* Line 193 of yacc.c.  */
-#line 141 "y.tab.c"
+#line 142 "y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -150,7 +151,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 154 "y.tab.c"
+#line 155 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -440,8 +441,8 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    22,    22,    35,    40,    41,    43,    44,    45,    48,
-      51,    54,    57,    58,    59,    60,    61,    62,    63
+       0,    23,    23,    36,    41,    42,    44,    45,    46,    49,
+      52,    55,    58,    59,    60,    61,    62,    63,    64
 };
 #endif
 
@@ -1360,7 +1361,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 22 "exprtree.y"
+#line 23 "exprtree.y"
     {
 				printtree((yyvsp[(2) - (3)].no));
 				FILE *target_file; 
@@ -1376,90 +1377,90 @@ yyreduce:
     break;
 
   case 3:
-#line 35 "exprtree.y"
+#line 36 "exprtree.y"
     {
 				exit(0);
 			}
     break;
 
   case 4:
-#line 40 "exprtree.y"
+#line 41 "exprtree.y"
     {(yyval.no) = createTree(-1,NULL,CONNECTORNODE,(yyvsp[(1) - (2)].no),(yyvsp[(2) - (2)].no));}
     break;
 
   case 5:
-#line 41 "exprtree.y"
+#line 42 "exprtree.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
   case 6:
-#line 43 "exprtree.y"
-    {(yyval.no) = (yyvsp[(1) - (1)].no);}
-    break;
-
-  case 7:
 #line 44 "exprtree.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
-  case 8:
+  case 7:
 #line 45 "exprtree.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
+  case 8:
+#line 46 "exprtree.y"
+    {(yyval.no) = (yyvsp[(1) - (1)].no);}
+    break;
+
   case 9:
-#line 48 "exprtree.y"
+#line 49 "exprtree.y"
     {(yyval.no) = createTree(-1,NULL,READNODE,(yyvsp[(3) - (5)].no),NULL);}
     break;
 
   case 10:
-#line 51 "exprtree.y"
+#line 52 "exprtree.y"
     {(yyval.no) = createTree(-1,NULL,WRITENODE,(yyvsp[(3) - (5)].no),NULL);}
     break;
 
   case 11:
-#line 54 "exprtree.y"
+#line 55 "exprtree.y"
     {(yyval.no) = createTree(-1,NULL,ASSIGNNODE,(yyvsp[(1) - (4)].no),(yyvsp[(3) - (4)].no));}
     break;
 
   case 12:
-#line 57 "exprtree.y"
+#line 58 "exprtree.y"
     {(yyval.no) = createTree(-1,"+",MATHOPNODE,(yyvsp[(1) - (3)].no),(yyvsp[(3) - (3)].no));}
     break;
 
   case 13:
-#line 58 "exprtree.y"
+#line 59 "exprtree.y"
     {(yyval.no) = createTree(-1,"-",MATHOPNODE,(yyvsp[(1) - (3)].no),(yyvsp[(3) - (3)].no));}
     break;
 
   case 14:
-#line 59 "exprtree.y"
+#line 60 "exprtree.y"
     {(yyval.no) = createTree(-1,"*",MATHOPNODE,(yyvsp[(1) - (3)].no),(yyvsp[(3) - (3)].no));}
     break;
 
   case 15:
-#line 60 "exprtree.y"
+#line 61 "exprtree.y"
     {(yyval.no) = createTree(-1,"/",MATHOPNODE,(yyvsp[(1) - (3)].no),(yyvsp[(3) - (3)].no));}
     break;
 
   case 16:
-#line 61 "exprtree.y"
+#line 62 "exprtree.y"
     {(yyval.no) = (yyvsp[(2) - (3)].no);}
     break;
 
   case 17:
-#line 62 "exprtree.y"
+#line 63 "exprtree.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
   case 18:
-#line 63 "exprtree.y"
+#line 64 "exprtree.y"
     {(yyval.no) = (yyvsp[(1) - (1)].no);}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1463 "y.tab.c"
+#line 1464 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1673,7 +1674,7 @@ yyreturn:
 }
 
 
-#line 65 "exprtree.y"
+#line 66 "exprtree.y"
 
 
 yyerror(char const *s)
@@ -1682,8 +1683,13 @@ yyerror(char const *s)
 }
 
 
-int main(void) {
+int main(int argc, char* argv[]) {
+	if(argc > 1)
+ 	{
+  		FILE *fp = fopen(argv[1], "r");
+  		if(fp)
+   			yyin = fp;
+ 	}
 	yyparse();
-	
 	return 0;
 }

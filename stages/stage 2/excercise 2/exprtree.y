@@ -6,6 +6,7 @@
 	int yylex(void);
     int yyerror();
 	regs[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	extern FILE *yyin;
 	nooffreereg=16;
 %}
 %union{
@@ -70,8 +71,13 @@ yyerror(char const *s)
 }
 
 
-int main(void) {
+int main(int argc, char* argv[]) {
+	if(argc > 1)
+ 	{
+  		FILE *fp = fopen(argv[1], "r");
+  		if(fp)
+   			yyin = fp;
+ 	}
 	yyparse();
-	
 	return 0;
 }

@@ -1,0 +1,256 @@
+//Pager Module
+
+alias functionNum R1;
+alias pid R2;
+
+
+//Swap Out function
+if(functionNum==SWAP_OUT) then
+
+    //Choose a process to swap out. (other than the IDLE, Shell or INIT)
+    alias swpPID R3;
+    swpPID=3;
+
+    alias swpProc R4;
+
+    //Loop through the Process Table and find a non-swapped process that is in the WAIT_PROCESS state
+    while(swpPID<SWAPPER_DAEMON) do
+        swpProc=PROCESS_TABLE+(swpPID*PT_ENTRY_SIZE);
+        if([swpProc+6]!=1 && [swpProc+4]==WAIT_PROCESS) then
+            break;
+        endif;
+        swpPID=swpPID+1;
+    endwhile;
+
+    //If there are no non-swapped processes in the WAIT_PROCESS state, find a non-swapped process in the WAIT_SEMAPHORE state.
+    if(swpPID==SWAPPER_DAEMON) then
+
+        swpPID=3;
+        while(swpPID<SWAPPER_DAEMON) do
+            swpProc=PROCESS_TABLE+(swpPID*PT_ENTRY_SIZE);
+            if([swpProc+6]!=1 && [swpProc+4]==WAIT_SEMAPHORE) then
+                break;
+            endif;
+            swpPID=swpPID+1;
+        endwhile;
+
+    endif;
+
+    alias loop R5;
+    //If there are no non-swapped processes in the WAIT_PROCESS and WAIT_SEMAPHORE state,
+    //find process with the highest TICK which is not running, terminated, allocated or swapped. 
+    if(swpPID==SWAPPER_DAEMON) then
+        
+        alias hiTick R6;
+        alias state R7;
+        hiTick=-1;
+        swpPID=-1;
+        loop=3;
+        while(loop<SWAPPER_DAEMON) do
+            swpProc=PROCESS_TABLE+(loop*PT_ENTRY_SIZE);
+            state=[swpProc+4];
+
+            if(state!=RUNNING && state!=TERMINATED && state!=ALLOCATED && [swpProc+6]!=1 && [swpProc]>hiTick) then
+                hiTick=[swpProc];
+                swpPID=loop;
+            endif;
+            
+            loop=loop+1;
+        endwhile;
+    endif;
+
+
+    //If no such process exists, 
+    if(swpPID==-1) then
+        //set the PAGING_STATUS back to 0 and return.
+        [SYSTEM_STATUS_TABLE+5]=0;
+        return;
+    endif;
+
+
+    //Set the TICK field of the process table entry of the selected process to 0.
+    swpProc=PROCESS_TABLE+(swpPID*PT_ENTRY_SIZE);
+    [swpProc]=0;
+
+
+    //Compressed the pseudocode provided in MOD_6
+    alias swpPTBR R8;
+    alias page R9;
+    alias pageEntry R10;
+    swpPTBR=[swpProc+14];
+    loop=2;
+    
+
+    while(loop<10) do       //PTLR is 10
+
+        pageEntry=swpPTBR+(loop*2);
+        page=[pageEntry];
+
+        if(loop==8 || loop==9 || loop==2 || loop==3) then
+
+            if(page!=-1 && [MEMORY_FREE_LIST+page]==1) then
+                //Get a free swap block by calling the get_swap_block() function in the Memory Manager module.
+                multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+                R1=GET_SWAP_BLOCK;
+                call MOD_2; //Memory Manager
+                multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+
+                //Store the disk block number in the Disk Map Table entry of the process curresponding to the page.
+                [DISK_MAP_TABLE+(swpPID*10)+loop]=R0;
+
+                //Use the disk_store() function in the Device Manager module to write the page to the block found above
+                multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+                R1=DISK_STORE;
+                R2=pid;
+                R3=page;
+                R4=R0;      //Block number
+                call MOD_4;     //Device Manager
+                multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+            endif;
+
+        endif;
+
+        if(page!=-1 &&  ((loop!=2 && loop!=3) || [MEMORY_FREE_LIST+page]==1)) then
+            multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+            R1=RELEASE_PAGE;
+            R2=page;
+            call MOD_2;     //Memory Manager Module
+            multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+
+            [pageEntry]=-1;
+            [pageEntry+1]="0000";
+        endif;
+
+
+
+        loop=loop+1;
+    endwhile;
+
+
+
+    //Set the SWAP_FLAG field in the process table entry of the process to 1.
+    [swpProc+6]=1;
+
+    //In the System Status Table, increment the SWAP_COUNT and reset the PAGING_STATUS back to 0.	
+    [SYSTEM_STATUS_TABLE+4]=[SYSTEM_STATUS_TABLE+4]+1;      //increment swap count
+    [SYSTEM_STATUS_TABLE+5]=0;      //Paging Status
+
+
+    return;
+
+
+endif;
+
+
+//Swap In
+if(functionNum==SWAP_IN) then
+
+    //Find if any swapped out process can be made ready to run if brought into memory.
+    alias swpPID R3;
+    alias loop R4;
+    alias hiTick R5;
+    alias swpProc R6;
+    swpPID=-1;
+    loop=SHELL_PROCESS+1;
+    hiTick=-1;
+
+    while(loop<SWAPPER_DAEMON) do
+        swpProc=PROCESS_TABLE+(loop*PT_ENTRY_SIZE);
+
+        //Process is ready and swapped
+        if([swpProc+4]==READY && [swpProc+6]==1 && [swpProc]>hiTick) then
+            swpPID=loop;
+            hiTick=[swpProc];
+        endif;
+        
+
+        loop=loop+1;
+    endwhile;
+
+
+    //If there is no such process in the READY state, reset the PAGING_STATUS field to 0 and Return.
+    if(swpPID==-1) then
+        [SYSTEM_STATUS_TABLE+5]=0;
+        return;
+    endif;
+
+    //Set the TICK field of the process table entry of the selected process to 0.
+    swpProc=PROCESS_TABLE+(swpPID*PT_ENTRY_SIZE);
+    [swpProc]=0;
+
+    
+    alias diskBlock R7;
+    alias swpPTBR R8;
+    alias pageEntry R9;
+    alias freePage R10;
+    swpPTBR=[swpProc+14];
+    
+
+
+    //Loop through the Disk Map Table and ignore the code pages
+    loop=2;     //0 and 1 are unused
+    while(loop<10) do
+
+        //Get the disk block number in the Disk Map Table entry of the process corresponding to the page.
+        diskBlock=[DISK_MAP_TABLE+(swpPID*10)+loop];
+
+        if((loop>=4 && loop<=7) || diskBlock==-1) then    //ignore code pages
+            loop=loop+1;
+            continue;
+        endif;
+
+
+        pageEntry=swpPTBR+(loop*2);
+
+        //Call the get_free_page() function in the Memory Manager module to allocate a memory page.
+        multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+        R1=GET_FREE_PAGE;
+        call MOD_2;  //Memory Manager
+        multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+
+        freePage=R0;
+
+        //Use the disk_load() function in the Device Manager module to copy the heap page found above to the memory.
+        multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+        R1=DISK_LOAD;
+        R2=pid;
+        R3=freePage;      //Page number
+        R4=diskBlock;   //Block number
+        call MOD_4;     //Device Manager Module
+        multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+
+        //Free the swap block by calling the release_block() function in the Memory Manager module.
+        multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+        R1=RELEASE_BLOCK;
+        R3=pid;
+        R2=diskBlock;   //Block number
+        call MOD_2;     //Memory Manager
+        multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+        
+
+        //Set the Page table entry correpsonding to the page.
+        [pageEntry]=freePage;
+        [pageEntry+1]="0110";       //unreferenced,valid,writable
+
+        //Invalidate the Disk Map Table entry corresponding to the page.
+        [DISK_MAP_TABLE+(swpPID*10)+loop]=-1;
+       
+
+
+
+        loop=loop+1;
+    endwhile;
+
+
+    //Set the SWAP_FLAG field in the process table entry of the process to 0.
+    [swpProc+6]=0;
+
+    //In the System Status Table, decrement the SWAP_COUNT and reset the PAGING_STATUS back to 0.	
+    [SYSTEM_STATUS_TABLE+4]=[SYSTEM_STATUS_TABLE+4]-1;
+    [SYSTEM_STATUS_TABLE+5]=0;
+    // The scheduler can now resume normal scheduling
+
+    return;
+
+
+endif;
