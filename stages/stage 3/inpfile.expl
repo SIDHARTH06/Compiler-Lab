@@ -1,0 +1,7 @@
+begin
+a=1;
+b=3;
+if() then
+write(a);
+endif
+end
