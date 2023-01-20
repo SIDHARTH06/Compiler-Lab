@@ -26,7 +26,7 @@ void preorder(struct tnode* tnode);
 #define IFNODE 8
 #define WHILENODE 9
 #define LOGICOPNODE 10
-
+#define IFELSENODE 11
 //generate code for the expression tree
 #define register_index int
 register_index codeGen(struct tnode* t,FILE*);
@@ -34,4 +34,5 @@ register_index getReg();
 register_index freeReg();
 int regs[16];
 int nooffreereg;
+int label;
 void printtree(struct tnode* t);

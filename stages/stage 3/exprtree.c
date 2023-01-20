@@ -17,6 +17,15 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 			}
 			break;
 		}
+		case IFELSENODE:
+		{
+			if(temp->left->type!=BOOLTYPE)
+			{
+				yyerror("NO INT TYPE INSIDE IF CONDITION: TYPE ERROR\n");
+				exit(1);
+			}
+			break;
+		}
 		case WHILENODE:
 		{
 			if(temp->left->type!=BOOLTYPE)
@@ -112,12 +121,72 @@ register_index freeReg(){
     }
 	nooffreereg--;
 }
+int getLabel(){
+	return label++;
+}
 register_index codeGen(struct tnode *t,FILE *target_file){
     int reg1=0,reg2=0,reg3=0;
 	if(t==NULL)
 	{
 		;
 	}
+	else if(t->nodetype==WHILENODE)
+	{
+		int l1=getLabel();
+		int l2=getLabel();
+		fprintf(target_file,"L%d:\n",l1);
+		reg1=codeGen(t->left,target_file);
+		fprintf(target_file,"JZ R%d, L%d\n",reg1,l2);
+		freeReg();
+		codeGen(t->right,target_file);
+		fprintf(target_file,"JMP L%d\n",l1);
+		fprintf(target_file,"L%d:\n",l2);
+		return -1;
+	}
+	else if(t->nodetype == IFNODE) {
+		int r0 = codeGen(t->left, target_file);
+		int label = getLabel();
+		fprintf(target_file, "JZ R%d, L%d\n", r0, label);
+		int _t = codeGen(t->right, target_file);
+		fprintf(target_file, "L%d:\n", label);
+		freeReg();
+		return -1;
+	}
+	else if(t->nodetype == IFELSENODE) {
+		int r0 = codeGen(t->left,target_file);
+		int label1 = getLabel();
+		int label2 = getLabel();
+		fprintf(target_file, "JZ R%d, L%d\n", r0, label1);
+		int _t = codeGen(t->right->left, target_file);
+		fprintf(target_file, "JMP L%d\n", label2);
+		fprintf(target_file, "L%d:\n", label1);
+		int _t2 = codeGen(t->right->right, target_file);
+		fprintf(target_file, "L%d:\n", label2);
+		freeReg();
+		return -1;
+	}
+	else if(t->nodetype==LOGICOPNODE)
+	{
+		reg1=codeGen(t->left,target_file);
+		reg2=codeGen(t->right,target_file);
+		reg3=getReg();
+		if(t->val==0)
+		{
+			fprintf(target_file,"OR R%d, R%d\n",reg1,reg2);
+			fprintf(target_file,"MOV R%d, 0\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		else if(t->val==1)
+		{
+			fprintf(target_file,"AND R%d, R%d\n",reg1,reg2);
+			fprintf(target_file,"MOV R%d, 0\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		freeReg();
+		freeReg();
+		return reg3;
+	}
+
     else if(t->nodetype == ASSIGNNODE){
         reg1 = getReg();
 		reg2=codeGen(t->right,target_file);

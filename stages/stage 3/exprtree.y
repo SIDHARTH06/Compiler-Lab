@@ -8,6 +8,7 @@
 	regs[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	extern FILE *yyin;
 	nooffreereg=16;
+	int label=0;
 %}
 %union{
 	struct tnode *no;
@@ -25,15 +26,14 @@
 
 program : BEG SLIST END{
 				inorder($2);
-				//FILE *target_file; 
-    			//target_file = fopen("ASSEMBLYCODE.xsm", "wb");
+				FILE *target_file; 
+    			target_file = fopen("ASSEMBLYCODE.xsm", "wb");
 				$$ = $2;
-				/*
 				fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
 				fprintf(target_file, "MOV SP, %d\n", 4096+(int)('z'-'a'));
                 codeGen($2,target_file);
 				fprintf(target_file, "INT 10");
-				fclose(target_file);*/
+				fclose(target_file);
                 exit(0);
 			}
 		;
@@ -65,7 +65,7 @@ ASSIGNSTMNT : ID ASSIGN expr ENDOFLINE		{$$ = createTree(-1,INVALIDTYPE,NULL,ASS
 IFSTMNT : IF '(' expr ')' THEN SLIST ENDIF	{$$ = createTree(-1,INVALIDTYPE,NULL,IFNODE,$3,$6);}
 	 ;
 
-IFELSESTMNT: IF '(' expr ')' THEN SLIST ELSE SLIST ENDIF	{$$ = createTree(-1,INVALIDTYPE,NULL,IFNODE,$3,createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$6,$8));}
+IFELSESTMNT: IF '(' expr ')' THEN SLIST ELSE SLIST ENDIF	{$$ = createTree(-1,INVALIDTYPE,NULL,IFELSENODE,$3,createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$6,$8));}
 	 ;
 
 WHILESTMNT : WHILE '(' expr ')' DO SLIST ENDWHILE	{$$ = createTree(-1,INVALIDTYPE,NULL,WHILENODE,$3,$6);}

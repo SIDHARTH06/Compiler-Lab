@@ -106,7 +106,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 12 "exprtree.y"
+#line 13 "exprtree.y"
 {
 	struct tnode *no;
 }

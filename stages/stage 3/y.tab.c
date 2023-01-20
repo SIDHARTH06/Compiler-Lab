@@ -143,6 +143,7 @@
 	regs[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	extern FILE *yyin;
 	nooffreereg=16;
+	int label=0;
 
 
 /* Enabling traces.  */
@@ -165,12 +166,12 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 12 "exprtree.y"
+#line 13 "exprtree.y"
 {
 	struct tnode *no;
 }
 /* Line 193 of yacc.c.  */
-#line 174 "y.tab.c"
+#line 175 "y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -183,7 +184,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 187 "y.tab.c"
+#line 188 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -482,7 +483,7 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    26,    26,    40,    45,    46,    48,    49,    50,    51,
+       0,    27,    27,    40,    45,    46,    48,    49,    50,    51,
       52,    53,    56,    59,    62,    65,    68,    71,    74,    75,
       76,    77,    78,    79,    80,    81,    82,    83,    84,    85,
       86,    87,    88,    89
@@ -1462,18 +1463,17 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 26 "exprtree.y"
+#line 27 "exprtree.y"
     {
 				inorder((yyvsp[(2) - (3)].no));
-				//FILE *target_file; 
-    			//target_file = fopen("ASSEMBLYCODE.xsm", "wb");
+				FILE *target_file; 
+    			target_file = fopen("ASSEMBLYCODE.xsm", "wb");
 				(yyval.no) = (yyvsp[(2) - (3)].no);
-				/*
 				fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
 				fprintf(target_file, "MOV SP, %d\n", 4096+(int)('z'-'a'));
-                codeGen($2,target_file);
+                codeGen((yyvsp[(2) - (3)].no),target_file);
 				fprintf(target_file, "INT 10");
-				fclose(target_file);*/
+				fclose(target_file);
                 exit(0);
 			}
     break;
@@ -1547,7 +1547,7 @@ yyreduce:
 
   case 16:
 #line 68 "exprtree.y"
-    {(yyval.no) = createTree(-1,INVALIDTYPE,NULL,IFNODE,(yyvsp[(3) - (9)].no),createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,(yyvsp[(6) - (9)].no),(yyvsp[(8) - (9)].no)));}
+    {(yyval.no) = createTree(-1,INVALIDTYPE,NULL,IFELSENODE,(yyvsp[(3) - (9)].no),createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,(yyvsp[(6) - (9)].no),(yyvsp[(8) - (9)].no)));}
     break;
 
   case 17:
