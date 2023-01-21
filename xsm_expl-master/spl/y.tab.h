@@ -126,7 +126,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 10 "splparser.y"
+#line 13 "splparser.y"
 {
     struct tree *n;
 }

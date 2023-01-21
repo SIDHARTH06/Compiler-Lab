@@ -5,7 +5,10 @@
 #include "y.tab.h"
 
 extern FILE *yyin;
-
+int label_free();
+int file_expandPath();
+int file_getOpFileName();
+int yyparse();
 int out_linecount=0; //no of lines of code generated
 int flag_break=0;
 int regcount=0;

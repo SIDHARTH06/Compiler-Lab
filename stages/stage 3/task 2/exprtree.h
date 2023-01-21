@@ -27,6 +27,10 @@ void preorder(struct tnode* tnode);
 #define WHILENODE 9
 #define LOGICOPNODE 10
 #define IFELSENODE 11
+#define BREAKNODE 12
+#define CONTINUENODE 13
+#define REPEATUNTILNODE 14
+#define DOWHILENODE 15
 //generate code for the expression tree
 #define register_index int
 register_index codeGen(struct tnode* t,FILE*);

@@ -5,6 +5,9 @@
 #include "spl.h"
 #include "file.h"
 #include "node.h"
+int yyerror(char *s);
+int yylex();
+int label_add();
 %}
 %union
 {

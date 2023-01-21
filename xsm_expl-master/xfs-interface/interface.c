@@ -12,7 +12,14 @@
 #include "exception.h"
 #include "diskUtility.h"
 
-
+int isspace();
+int loadShellCode();
+int loadLibraryCode();
+int loadIdleCode();
+int deleteFileFromDisk();
+int exportFile();
+int copyBlocksToFile();
+int dumpIn
 jmp_buf exp_point;//for exception handling
 
 /*

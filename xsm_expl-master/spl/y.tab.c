@@ -160,6 +160,9 @@
 #include "spl.h"
 #include "file.h"
 #include "node.h"
+int yyerror(char *s);
+int yylex();
+int label_add();
 
 
 /* Enabling traces.  */
@@ -182,12 +185,12 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 10 "splparser.y"
+#line 13 "splparser.y"
 {
     struct tree *n;
 }
 /* Line 193 of yacc.c.  */
-#line 191 "y.tab.c"
+#line 194 "y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -200,7 +203,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 204 "y.tab.c"
+#line 207 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -508,12 +511,12 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    23,    23,    30,    35,    36,    39,    42,    50,    53,
-      58,    70,    82,    87,    93,    99,   103,   106,   109,   112,
-     115,   118,   126,   134,   137,   143,   146,   149,   157,   160,
-     163,   166,   174,   185,   196,   203,   206,   209,   212,   215,
-     220,   223,   226,   229,   232,   235,   240,   245,   250,   257,
-     260
+       0,    26,    26,    33,    38,    39,    42,    45,    53,    56,
+      61,    73,    85,    90,    96,   102,   106,   109,   112,   115,
+     118,   121,   129,   137,   140,   146,   149,   152,   160,   163,
+     166,   169,   177,   188,   199,   206,   209,   212,   215,   218,
+     223,   226,   229,   232,   235,   238,   243,   248,   253,   260,
+     263
 };
 #endif
 
@@ -1531,7 +1534,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 23 "splparser.y"
+#line 26 "splparser.y"
     {
                                     codegen((yyvsp[(2) - (2)].n));
                                     out_linecount++;
@@ -1540,21 +1543,21 @@ yyreduce:
     break;
 
   case 3:
-#line 30 "splparser.y"
+#line 33 "splparser.y"
     {
                                     add_predefined_constants();
                                 }
     break;
 
   case 6:
-#line 39 "splparser.y"
+#line 42 "splparser.y"
     {
                                                     insert_constant((yyvsp[(2) - (4)].n)->name,(yyvsp[(3) - (4)].n)->value);
                                                 }
     break;
 
   case 7:
-#line 42 "splparser.y"
+#line 45 "splparser.y"
     {
                                                     if(node_getType((yyvsp[(3) - (5)].n))==NODE_SUB)
                                                         insert_constant((yyvsp[(2) - (5)].n)->name,-1*(yyvsp[(4) - (5)].n)->value);
@@ -1564,21 +1567,21 @@ yyreduce:
     break;
 
   case 8:
-#line 50 "splparser.y"
+#line 53 "splparser.y"
     {
                                                     (yyval.n)=create_nontermNode(NODE_STMTLIST,(yyvsp[(1) - (2)].n),(yyvsp[(2) - (2)].n));
                                                 }
     break;
 
   case 9:
-#line 53 "splparser.y"
+#line 56 "splparser.y"
     {
                                                     (yyval.n)=(yyvsp[(1) - (1)].n);
                                                 }
     break;
 
   case 10:
-#line 58 "splparser.y"
+#line 61 "splparser.y"
     {
                                                     if(node_getType((yyvsp[(1) - (4)].n))==NODE_REG || node_getType((yyvsp[(1) - (4)].n))==NODE_ADDR_EXPR)
                                                     {
@@ -1594,7 +1597,7 @@ yyreduce:
     break;
 
   case 11:
-#line 70 "splparser.y"
+#line 73 "splparser.y"
     {
                                                     if(node_getType((yyvsp[(1) - (4)].n))==NODE_REG || node_getType((yyvsp[(1) - (4)].n))==NODE_ADDR_EXPR)
                                                     {
@@ -1610,7 +1613,7 @@ yyreduce:
     break;
 
   case 12:
-#line 82 "splparser.y"
+#line 85 "splparser.y"
     {                                
                                                             (yyval.n)=create_tree((yyvsp[(1) - (6)].n),(yyvsp[(2) - (6)].n),(yyvsp[(4) - (6)].n),NULL);
                                                             pop_alias();
@@ -1619,7 +1622,7 @@ yyreduce:
     break;
 
   case 13:
-#line 88 "splparser.y"
+#line 91 "splparser.y"
     {    
                                                             (yyval.n)=create_tree((yyvsp[(1) - (8)].n),(yyvsp[(2) - (8)].n),(yyvsp[(4) - (8)].n),(yyvsp[(6) - (8)].n));
                                                             pop_alias();
@@ -1628,7 +1631,7 @@ yyreduce:
     break;
 
   case 14:
-#line 93 "splparser.y"
+#line 96 "splparser.y"
     {
                                                             (yyval.n)=create_tree((yyvsp[(1) - (6)].n),(yyvsp[(2) - (6)].n),(yyvsp[(4) - (6)].n),NULL);
                                                             pop_alias();
@@ -1638,7 +1641,7 @@ yyreduce:
     break;
 
   case 15:
-#line 99 "splparser.y"
+#line 102 "splparser.y"
     {    
                                                             push_alias((yyvsp[(2) - (4)].n)->name,(yyvsp[(3) - (4)].n)->value);
                                                             (yyval.n)=NULL;
@@ -1646,42 +1649,42 @@ yyreduce:
     break;
 
   case 16:
-#line 103 "splparser.y"
-    {
-                                                            (yyval.n)=create_tree((yyvsp[(1) - (7)].n),(yyvsp[(3) - (7)].n),(yyvsp[(5) - (7)].n),NULL);
-                                                        }
-    break;
-
-  case 17:
 #line 106 "splparser.y"
     {
                                                             (yyval.n)=create_tree((yyvsp[(1) - (7)].n),(yyvsp[(3) - (7)].n),(yyvsp[(5) - (7)].n),NULL);
                                                         }
     break;
 
-  case 18:
+  case 17:
 #line 109 "splparser.y"
     {
                                                             (yyval.n)=create_tree((yyvsp[(1) - (7)].n),(yyvsp[(3) - (7)].n),(yyvsp[(5) - (7)].n),NULL);
                                                         }
     break;
 
-  case 19:
+  case 18:
 #line 112 "splparser.y"
     {
-                                                            (yyval.n)=(yyvsp[(1) - (2)].n);
+                                                            (yyval.n)=create_tree((yyvsp[(1) - (7)].n),(yyvsp[(3) - (7)].n),(yyvsp[(5) - (7)].n),NULL);
                                                         }
     break;
 
-  case 20:
+  case 19:
 #line 115 "splparser.y"
     {
                                                             (yyval.n)=(yyvsp[(1) - (2)].n);
                                                         }
     break;
 
-  case 21:
+  case 20:
 #line 118 "splparser.y"
+    {
+                                                            (yyval.n)=(yyvsp[(1) - (2)].n);
+                                                        }
+    break;
+
+  case 21:
+#line 121 "splparser.y"
     {
                                                             if(flag_break==0)
                                                             {
@@ -1693,7 +1696,7 @@ yyreduce:
     break;
 
   case 22:
-#line 126 "splparser.y"
+#line 129 "splparser.y"
     {
                                                 if(flag_break==0)
                                                 {
@@ -1705,14 +1708,14 @@ yyreduce:
     break;
 
   case 23:
-#line 134 "splparser.y"
+#line 137 "splparser.y"
     {    
                                                 (yyval.n)=(yyvsp[(1) - (2)].n);
                                             }
     break;
 
   case 24:
-#line 137 "splparser.y"
+#line 140 "splparser.y"
     {
                                                 (yyvsp[(2) - (3)].n)->name++;
                                                 int temp=strlen((yyvsp[(2) - (3)].n)->name);
@@ -1722,21 +1725,21 @@ yyreduce:
     break;
 
   case 25:
-#line 143 "splparser.y"
+#line 146 "splparser.y"
     {    
                                                 (yyval.n)=(yyvsp[(1) - (2)].n);
                                             }
     break;
 
   case 26:
-#line 146 "splparser.y"
+#line 149 "splparser.y"
     {
                                                 (yyval.n)=(yyvsp[(1) - (2)].n);
                                             }
     break;
 
   case 27:
-#line 149 "splparser.y"
+#line 152 "splparser.y"
     {    
                                                 if(node_getType((yyvsp[(2) - (3)].n))!=NODE_REG||!isAllowedRegister((yyvsp[(2) - (3)].n)->value))
                                                 {
@@ -1748,28 +1751,28 @@ yyreduce:
     break;
 
   case 28:
-#line 157 "splparser.y"
+#line 160 "splparser.y"
     {
                                                 (yyval.n)=create_tree((yyvsp[(1) - (3)].n),(yyvsp[(2) - (3)].n),NULL,NULL);
                                             }
     break;
 
   case 29:
-#line 160 "splparser.y"
-    {
-                                                (yyval.n) = create_tree((yyvsp[(1) - (2)].n), NULL, NULL, NULL);
-                                            }
-    break;
-
-  case 30:
 #line 163 "splparser.y"
     {
                                                 (yyval.n) = create_tree((yyvsp[(1) - (2)].n), NULL, NULL, NULL);
                                             }
     break;
 
-  case 31:
+  case 30:
 #line 166 "splparser.y"
+    {
+                                                (yyval.n) = create_tree((yyvsp[(1) - (2)].n), NULL, NULL, NULL);
+                                            }
+    break;
+
+  case 31:
+#line 169 "splparser.y"
     {    
                                                 if(node_getType((yyvsp[(2) - (3)].n))!=NODE_REG||!isAllowedRegister((yyvsp[(2) - (3)].n)->value))
                                                 {
@@ -1781,7 +1784,7 @@ yyreduce:
     break;
 
   case 32:
-#line 174 "splparser.y"
+#line 177 "splparser.y"
     {
                                                 if(lookup_constant(node_getName((yyvsp[(2) - (3)].n)))!=NULL)/*if the address to jump to is a predefined value in constants file*/
                                                 {
@@ -1796,7 +1799,7 @@ yyreduce:
     break;
 
   case 33:
-#line 185 "splparser.y"
+#line 188 "splparser.y"
     {
                                                 if(lookup_constant(node_getName((yyvsp[(2) - (3)].n)))!=NULL)/*if the address to jump to is a predefined value in constants file*/
                                                 {
@@ -1811,7 +1814,7 @@ yyreduce:
     break;
 
   case 34:
-#line 196 "splparser.y"
+#line 199 "splparser.y"
     {
                                                 label_add(node_getName((yyvsp[(1) - (2)].n)));
                                                 (yyval.n)=create_nontermNode(NODE_LABEL_DEF,(yyvsp[(1) - (2)].n),NULL);
@@ -1819,35 +1822,35 @@ yyreduce:
     break;
 
   case 35:
-#line 203 "splparser.y"
-    {
-                                                (yyval.n)=create_tree((yyvsp[(2) - (3)].n),(yyvsp[(1) - (3)].n),(yyvsp[(3) - (3)].n),NULL);
-                                            }
-    break;
-
-  case 36:
 #line 206 "splparser.y"
     {
                                                 (yyval.n)=create_tree((yyvsp[(2) - (3)].n),(yyvsp[(1) - (3)].n),(yyvsp[(3) - (3)].n),NULL);
                                             }
     break;
 
-  case 37:
+  case 36:
 #line 209 "splparser.y"
     {
                                                 (yyval.n)=create_tree((yyvsp[(2) - (3)].n),(yyvsp[(1) - (3)].n),(yyvsp[(3) - (3)].n),NULL);
                                             }
     break;
 
-  case 38:
+  case 37:
 #line 212 "splparser.y"
     {
                                                 (yyval.n)=create_tree((yyvsp[(2) - (3)].n),(yyvsp[(1) - (3)].n),(yyvsp[(3) - (3)].n),NULL);
                                             }
     break;
 
-  case 39:
+  case 38:
 #line 215 "splparser.y"
+    {
+                                                (yyval.n)=create_tree((yyvsp[(2) - (3)].n),(yyvsp[(1) - (3)].n),(yyvsp[(3) - (3)].n),NULL);
+                                            }
+    break;
+
+  case 39:
+#line 218 "splparser.y"
     {
                                                 if(node_getType((yyvsp[(1) - (2)].n))==NODE_SUB)
                                                     (yyvsp[(2) - (2)].n)->value=(yyvsp[(2) - (2)].n)->value*-1;
@@ -1856,49 +1859,49 @@ yyreduce:
     break;
 
   case 40:
-#line 220 "splparser.y"
+#line 223 "splparser.y"
     {
                                                 (yyval.n)=create_tree((yyvsp[(1) - (2)].n),(yyvsp[(2) - (2)].n),NULL,NULL);
                                             }
     break;
 
   case 41:
-#line 223 "splparser.y"
+#line 226 "splparser.y"
     {
                                                 (yyval.n)=create_nontermNode(NODE_ADDR_EXPR,(yyvsp[(2) - (3)].n),NULL);
                                             }
     break;
 
   case 42:
-#line 226 "splparser.y"
+#line 229 "splparser.y"
     {
                                                 (yyval.n)=(yyvsp[(2) - (3)].n);
                                             }
     break;
 
   case 43:
-#line 229 "splparser.y"
+#line 232 "splparser.y"
     {    
                                                 (yyval.n)=(yyvsp[(1) - (1)].n);
                                             }
     break;
 
   case 44:
-#line 232 "splparser.y"
-    {
-                                                (yyval.n)=(yyvsp[(1) - (1)].n);
-                                            }
-    break;
-
-  case 45:
 #line 235 "splparser.y"
     {
                                                 (yyval.n)=(yyvsp[(1) - (1)].n);
                                             }
     break;
 
+  case 45:
+#line 238 "splparser.y"
+    {
+                                                (yyval.n)=(yyvsp[(1) - (1)].n);
+                                            }
+    break;
+
   case 46:
-#line 240 "splparser.y"
+#line 243 "splparser.y"
     {
                                                 depth++;
                                                 (yyval.n)=(yyvsp[(1) - (1)].n);
@@ -1906,14 +1909,14 @@ yyreduce:
     break;
 
   case 47:
-#line 245 "splparser.y"
+#line 248 "splparser.y"
     {
                                                 pop_alias();
                                             }
     break;
 
   case 48:
-#line 250 "splparser.y"
+#line 253 "splparser.y"
     {
                                                 depth++;
                                                 flag_break++;
@@ -1922,14 +1925,14 @@ yyreduce:
     break;
 
   case 49:
-#line 257 "splparser.y"
+#line 260 "splparser.y"
     {                            
                                                 (yyval.n)=substitute_id((yyvsp[(1) - (1)].n));
                                             }
     break;
 
   case 50:
-#line 260 "splparser.y"
+#line 263 "splparser.y"
     {
                                                 (yyval.n)=(yyvsp[(1) - (1)].n);
                                             }
@@ -1937,7 +1940,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 1941 "y.tab.c"
+#line 1944 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2151,7 +2154,7 @@ yyreturn:
 }
 
 
-#line 264 "splparser.y"
+#line 267 "splparser.y"
 
 
 int yyerror (char *msg) 

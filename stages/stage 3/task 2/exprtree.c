@@ -56,7 +56,7 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 		{
 			if(temp->left->type!=temp->right->type && temp->left->type!=INTTYPE)
 			{
-				if(temp->left->type!=BOOLTYPE)
+				if(temp->left->type==BOOLTYPE)
 				{
 					yyerror("NO BOOLEAN IN MATH OPERATIONS : TYPE ERROR\n");
 					exit(1);
@@ -89,6 +89,7 @@ void inorder(struct tnode* tnode) {
 	else
 	{
 		inorder(tnode->left);
+		printf("%s ",tnode->varname);
 		printf("%d ",tnode->nodetype);
 		inorder(tnode->right);
 	}
@@ -170,16 +171,45 @@ register_index codeGen(struct tnode *t,FILE *target_file){
 		reg1=codeGen(t->left,target_file);
 		reg2=codeGen(t->right,target_file);
 		reg3=getReg();
-		if(t->val==0)
+		if(t->varname=='||')
 		{
 			fprintf(target_file,"OR R%d, R%d\n",reg1,reg2);
-			fprintf(target_file,"MOV R%d, 0\n",reg3);
+			fprintf(target_file,"MOV R%d, \n",reg3);
 			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
 		}
-		else if(t->val==1)
+		else if(t->varname=='&&')
 		{
 			fprintf(target_file,"AND R%d, R%d\n",reg1,reg2);
-			fprintf(target_file,"MOV R%d, 0\n",reg3);
+			fprintf(target_file,"MOV R%d, 1\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		else if(t->varname=='!')
+		{
+			fprintf(target_file,"MOV R%d, 1\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		else if(t->varname='<')
+		{
+			fprintf(target_file,"LT R%d, R%d\n",reg1,reg2);
+			fprintf(target_file,"MOV R%d, 1\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		else if(t->varname=='>')
+		{
+			fprintf(target_file,"GT R%d, R%d\n",reg1,reg2);
+			fprintf(target_file,"MOV R%d, 1\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		else if(t->varname=='==')
+		{
+			fprintf(target_file,"EQ R%d, R%d\n",reg1,reg2);
+			fprintf(target_file,"MOV R%d, 1\n",reg3);
+			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
+		}
+		else if(t->varname=='!=')
+		{
+			fprintf(target_file,"NE R%d, R%d\n",reg1,reg2);
+			fprintf(target_file,"MOV R%d, 1\n",reg3);
 			fprintf(target_file,"EQ R%d, R%d\n",reg3,reg1);
 		}
 		freeReg();
