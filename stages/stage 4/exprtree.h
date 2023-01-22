@@ -31,6 +31,7 @@ void preorder(struct tnode* tnode);
 #define CONTINUENODE 13
 #define REPEATUNTILNODE 14
 #define DOWHILENODE 15
+
 //generate code for the expression tree
 #define register_index int
 register_index codeGen(struct tnode* t,FILE*);
@@ -39,4 +40,5 @@ register_index freeReg();
 int regs[16];
 int nooffreereg;
 int label;
+int label1;
 void printtree(struct tnode* t);

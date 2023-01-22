@@ -66,6 +66,25 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 			temp->varname[0] = varname[0];
 			break;
 		}
+		case DOWHILENODE:
+		{
+			if(temp->left->type!=BOOLTYPE)
+			{
+				yyerror("NO INT TYPE INSIDE DO WHILE CONDITION: TYPE ERROR\n");
+				exit(1);
+			}
+			break;
+		}
+		case REPEATUNTILNODE:
+		{
+			if(temp->left->type!=BOOLTYPE)
+			{
+				yyerror("NO INT TYPE INSIDE REPEAT UNTIL CONDITION: TYPE ERROR\n");
+				exit(1);
+			}
+			break;
+		}
+
 	}
 	return temp;
 }
@@ -130,41 +149,6 @@ register_index codeGen(struct tnode *t,FILE *target_file){
 	if(t==NULL)
 	{
 		;
-	}
-	else if(t->nodetype==WHILENODE)
-	{
-		int l1=getLabel();
-		int l2=getLabel();
-		fprintf(target_file,"L%d:\n",l1);
-		reg1=codeGen(t->left,target_file);
-		fprintf(target_file,"JZ R%d, L%d\n",reg1,l2);
-		freeReg();
-		codeGen(t->right,target_file);
-		fprintf(target_file,"JMP L%d\n",l1);
-		fprintf(target_file,"L%d:\n",l2);
-		return -1;
-	}
-	else if(t->nodetype == IFNODE) {
-		int r0 = codeGen(t->left, target_file);
-		int label = getLabel();
-		fprintf(target_file, "JZ R%d, L%d\n", r0, label);
-		int _t = codeGen(t->right, target_file);
-		fprintf(target_file, "L%d:\n", label);
-		freeReg();
-		return -1;
-	}
-	else if(t->nodetype == IFELSENODE) {
-		int r0 = codeGen(t->left,target_file);
-		int label1 = getLabel();
-		int label2 = getLabel();
-		fprintf(target_file, "JZ R%d, L%d\n", r0, label1);
-		int _t = codeGen(t->right->left, target_file);
-		fprintf(target_file, "JMP L%d\n", label2);
-		fprintf(target_file, "L%d:\n", label1);
-		int _t2 = codeGen(t->right->right, target_file);
-		fprintf(target_file, "L%d:\n", label2);
-		freeReg();
-		return -1;
 	}
 	else if(t->nodetype==LOGICOPNODE)
 	{
@@ -309,5 +293,70 @@ register_index codeGen(struct tnode *t,FILE *target_file){
 		
         return reg1;
     }
+	else if(t->nodetype== BREAKNODE)
+	{
+		fprintf(target_file,"JMP L%d\n",label);
+		return -1;
+	}
+	else if(t->nodetype==CONTINUENODE)
+	{
+		fprintf(target_file,"JMP L%d\n",label1);
+		return -1;
+	}
+	else if(t->nodetype==WHILENODE)
+	{
+		label++;
+		label1++;
+		fprintf(target_file,"L%d:\n",label);
+		reg1=codeGen(t->left,target_file);
+		fprintf(target_file,"JZ R%d, L%d\n",reg1,label+1);
+		freeReg();
+		codeGen(t->right,target_file);
+		fprintf(target_file,"JMP L%d\n",label);
+		fprintf(target_file,"L%d:\n",label+1);
+		label++;
+		label1++;
+		return -1;
+	}
+	else if(t->nodetype==IFNODE)
+	{
+		label++;
+		reg1=codeGen(t->left,target_file);
+		fprintf(target_file,"JZ R%d, L%d\n",reg1,label);
+		freeReg();
+		codeGen(t->right,target_file);
+		fprintf(target_file,"L%d:\n",label);
+		label++;
+		return -1;
+	}
+	else if(t->nodetype==IFELSENODE)
+	{
+		label++;
+		reg1=codeGen(t->left,target_file);
+		fprintf(target_file,"JZ R%d, L%d\n",reg1,label);
+		freeReg();
+		codeGen(t->right->left,target_file);
+		fprintf(target_file,"JMP L%d\n",label+1);
+		fprintf(target_file,"L%d:\n",label);
+		codeGen(t->right->right,target_file);
+		fprintf(target_file,"L%d:\n",label+1);
+		label++;
+		label++;
+		return -1;
+	}
+	else if(t->nodetype==DOWHILENODE)
+	{
+		label++;
+		label1++;
+		fprintf(target_file,"L%d:\n",label);
+		codeGen(t->left,target_file);
+		reg1=codeGen(t->right,target_file);
+		fprintf(target_file,"JNZ R%d, L%d\n",reg1,label);
+		freeReg();
+		fprintf(target_file,"L%d:\n",label+1);
+		label++;
+		label1++;
+		return -1;
+	}
 }
 

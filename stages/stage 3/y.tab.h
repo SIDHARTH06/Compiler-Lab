@@ -52,22 +52,26 @@
      BEG = 268,
      ENOFLINE = 269,
      END = 270,
-     IF = 271,
-     THEN = 272,
-     ELSE = 273,
-     ENDIF = 274,
-     WHILE = 275,
-     DO = 276,
-     ENDWHILE = 277,
-     LT = 278,
-     GT = 279,
-     LE = 280,
-     GE = 281,
-     EQ = 282,
-     NE = 283,
-     AND = 284,
-     OR = 285,
-     NOT = 286
+     REPEAT = 271,
+     BREAK = 272,
+     CONTINUE = 273,
+     UNTIL = 274,
+     STARTC = 275,
+     ENDC = 276,
+     IF = 277,
+     THEN = 278,
+     ELSE = 279,
+     WHILE = 280,
+     DO = 281,
+     LT = 282,
+     GT = 283,
+     LE = 284,
+     GE = 285,
+     EQ = 286,
+     NE = 287,
+     AND = 288,
+     OR = 289,
+     NOT = 290
    };
 #endif
 /* Tokens.  */
@@ -84,22 +88,26 @@
 #define BEG 268
 #define ENOFLINE 269
 #define END 270
-#define IF 271
-#define THEN 272
-#define ELSE 273
-#define ENDIF 274
-#define WHILE 275
-#define DO 276
-#define ENDWHILE 277
-#define LT 278
-#define GT 279
-#define LE 280
-#define GE 281
-#define EQ 282
-#define NE 283
-#define AND 284
-#define OR 285
-#define NOT 286
+#define REPEAT 271
+#define BREAK 272
+#define CONTINUE 273
+#define UNTIL 274
+#define STARTC 275
+#define ENDC 276
+#define IF 277
+#define THEN 278
+#define ELSE 279
+#define WHILE 280
+#define DO 281
+#define LT 282
+#define GT 283
+#define LE 284
+#define GE 285
+#define EQ 286
+#define NE 287
+#define AND 288
+#define OR 289
+#define NOT 290
 
 
 
@@ -111,7 +119,7 @@ typedef union YYSTYPE
 	struct tnode *no;
 }
 /* Line 1529 of yacc.c.  */
-#line 115 "y.tab.h"
+#line 123 "y.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

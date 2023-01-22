@@ -15,11 +15,14 @@ int yyerror();
 "read"	 {return READ;}
 "write"	 {return WRITE;}
 "if" 	 {return IF;}
-"then"	 {return THEN;}
 "else"	 {return ELSE;}
-"endif"	 {return ENDIF;}
 "while"	 {return WHILE;}
-"endwhile" {return ENDWHILE;}
+"repeat" {return REPEAT;}
+"until"  {return UNTIL;}
+"break"  {return BREAK;}
+"continue" {return CONTINUE;}
+[{]	{return STARTC;}
+[}]	{return ENDC;}
 "do"     {return DO;}
 [a-z]    {varname[0]=yytext[0]; yylval.no = createTree(-1,INVALIDTYPE,varname,VARNODE,NULL,NULL); return ID;}
 [0-9]+	{number = atoi(yytext); yylval.no = createTree(number,INTTYPE,NULL,NUMNODE,NULL,NULL); return NUM;}
