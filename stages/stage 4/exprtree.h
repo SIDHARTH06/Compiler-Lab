@@ -1,10 +1,32 @@
+//syntax tree node structure
 typedef struct tnode {
     int val;        // value of a number for NUM nodes.
     int type;       // type of variable
     char* varname;  // name of a variable for ID nodes
     int nodetype;   // information about non-leaf nodes - read/write/connector/+/* etc.
     struct tnode *left,*right;  // left and right branches
+    struct Gsymbol *Gentry; //pointer to a global symbol table entry
 }tnode;
+//global symbol table
+typedef struct Gsymbol {
+    char* name; //name of the variable
+    int type; //type of the variable
+    int size; //size of the array
+    int binding; //stores the static memory address allocated to the variable
+    struct Gsymbol *next; //pointer to next symbol table entry
+}Gsymbol;
+struct Gsymbol* GHead;
+//type of variable
+#define BOOLTYPE 0
+#define INTTYPE 1
+#define STRINGTYPE 2
+#define INVALIDTYPE -1
+//create and initialize global symbol table
+void GsymbolTableCreate();
+//lookup function
+struct Gsymbol* lookup(char* name);
+//install function
+void install(char* name, int type, int size);
 //create abstract syntax tree
 struct tnode* createTree(int val, int type, char* varname, int nodetype, struct tnode* l, struct tnode* r);
 /*To evaluate an expression tree*/

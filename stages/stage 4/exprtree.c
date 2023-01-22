@@ -1,4 +1,52 @@
 int yyerror();
+//symbol table functions
+void GsymbolTableCreate()
+{
+	GHead=(struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+}
+struct Gsymbol* Glookup(char* name)
+{
+	struct Gsymbol* temp = GHead;
+	while(temp!=NULL)
+	{
+		if(strcmp(temp->name,name)==0)
+		{
+			return temp;
+		}
+		temp = temp->next;
+	}
+	return NULL;
+}
+void install(char* name, int type, int size, int binding)
+{
+	struct Gsymbol* temp = Glookup(name);
+	if(temp!=NULL)
+	{
+		yyerror("Variable already declared\n");
+		exit(1);
+	}
+	struct Gsymbol* new = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+	new->name = name;
+	new->type = type;
+	new->size = size;
+	new->binding = binding;
+	new->next = NULL;
+	temp = GHead;
+	while(temp->next!=NULL)
+	{
+		temp = temp->next;
+	}
+	temp->next = new;
+}
+void GsymbolTablePrint()
+{
+	struct Gsymbol* temp = GHead;
+	while(temp!=NULL)
+	{
+		printf("Name: %s\tType: %d\tSize: %d\tBinding: %d",temp->name,temp->type,temp->size,temp->binding);
+		temp = temp->next;
+	}
+}
 struct tnode* createTree(int val, int type, char* varname, int nodetype, struct tnode* l, struct tnode* r) {
 	struct tnode* temp;
 	temp = (struct tnode*)malloc(sizeof(struct tnode));
