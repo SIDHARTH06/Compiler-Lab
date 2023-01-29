@@ -3,6 +3,8 @@
 	#include <stdio.h>
 	#include "exprtree.h"
 	#include "exprtree.c"
+	#include <string.h>
+
 	int yylex(void);
     int yyerror();
 	regs[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -12,10 +14,11 @@
 %}
 %union{
 	struct tnode *no;
+	char varname[100];
 }
 
-%type <no> expr STMNT SLIST INPUTSTMNT OUTPUTSTMNT program ID NUM ASSIGNSTMNT IFSTMNT WHILESTMNT IFELSESTMNT DOWHILESTMNT BREAKSTMNT CONTINUESTMNT REPEATUNTILSTMNT
-%token READ WRITE NUM ID ENDOFLINE ASSIGN PLUS MINUS MUL DIV BEG ENOFLINE END REPEAT BREAK CONTINUE UNTIL STARTC ENDC
+%type <no> expr STMNT SLIST INPUTSTMNT OUTPUTSTMNT program ID NUM ASSIGNSTMNT IFSTMNT WHILESTMNT IFELSESTMNT DOWHILESTMNT BREAKSTMNT CONTINUESTMNT REPEATUNTILSTMNT TYPE DECLARATIONS DECLSTMNT DEC VARLIST
+%token READ WRITE NUM ID ENDOFLINE ASSIGN PLUS MINUS MUL DIV BEG ENOFLINE END REPEAT BREAK CONTINUE UNTIL STARTC ENDC DECL INT STR
 %token IF THEN ELSE WHILE DO  LT GT LE GE EQ NE AND OR NOT
 %left AND OR NOT
 %left LT GT LE GE EQ NE
@@ -24,8 +27,9 @@
 
 %%
 
-program : BEG SLIST END{
-				inorder($2);
+program : DECLARATIONS SLIST {
+				printf("test");
+				createSymbolTable($1);
 				FILE *target_file; 
     			target_file = fopen("ASSEMBLYCODE.xsm", "wb");
 				$$ = $2;
@@ -37,10 +41,25 @@ program : BEG SLIST END{
                 exit(0);
 			}
 		;
-	| BEG END{
+	| SLIST{
 				exit(0);
 			}
 		;
+
+DECLARATIONS: DECL STARTC DECLSTMNT ENDC {$$ = $3;}
+;
+DECLSTMNT: DECLSTMNT DEC {$$ = createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$1,$2);}
+	 | DEC {$$ = $1;}
+	 ;
+DEC: TYPE VARLIST ENDOFLINE {$$ = createTree(-1,INVALIDTYPE,NULL,DECLNODE,$1,$2);}
+	 ;
+VARLIST: VARLIST ',' ID {$$ = createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$1,createVarnodeDuringDeclaration($1));}
+	 | ID {$$ = createVarnodeDuringDeclaration($1);}
+	 ;
+
+TYPE: INT {$$ = createTree(-1,INTTYPE,NULL,TYPENODE,NULL,NULL);}
+	 | STR {$$ = createTree(-1,STRTYPE,NULL,TYPENODE,NULL,NULL);}
+	 ;
 
 SLIST: SLIST STMNT		{$$ = createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$1,$2);}
 	 | STMNT			{$$ = $1;}

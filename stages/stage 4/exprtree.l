@@ -5,7 +5,6 @@
 	#include "exprtree.h"
 	int number;
     int yyerror();
-	char varname[1];
 
 %}
 int yyerror();
@@ -21,10 +20,14 @@ int yyerror();
 "until"  {return UNTIL;}
 "break"  {return BREAK;}
 "continue" {return CONTINUE;}
+"decl"	 {return DECL;}
+"int"   {return INT;}
+"str"   {return STR;}
+[,] 	{return *yytext;}
 [{]	{return STARTC;}
 [}]	{return ENDC;}
 "do"     {return DO;}
-[a-z]    {varname[0]=yytext[0]; yylval.no = createTree(-1,INVALIDTYPE,varname,VARNODE,NULL,NULL); return ID;}
+[_a-zA-Z][_a-zA-Z0-9]*	{strcpy(yylval.varname,yytext); return ID; }
 [0-9]+	{number = atoi(yytext); yylval.no = createTree(number,INTTYPE,NULL,NUMNODE,NULL,NULL); return NUM;}
 "="	 {return ASSIGN;}
 "+"	{return PLUS;}

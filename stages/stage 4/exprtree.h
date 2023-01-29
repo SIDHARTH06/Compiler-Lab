@@ -35,6 +35,7 @@ void preorder(struct tnode* tnode);
 //expression types
 #define BOOLTYPE 0
 #define INTTYPE 1
+#define STRTYPE 2
 #define INVALIDTYPE -1
 
 //nodetype definition
@@ -53,7 +54,10 @@ void preorder(struct tnode* tnode);
 #define CONTINUENODE 13
 #define REPEATUNTILNODE 14
 #define DOWHILENODE 15
-
+#define TYPENODE 16
+#define DECLNODE 17
+#define BOOLNODE 18
+#define DECNODE 19
 //generate code for the expression tree
 #define register_index int
 register_index codeGen(struct tnode* t,FILE*);
@@ -63,4 +67,6 @@ int regs[16];
 int nooffreereg;
 int label;
 int label1;
+int typeglob;
 void printtree(struct tnode* t);
+struct tnode* createVarnodeDuringDeclaration(char* varname);

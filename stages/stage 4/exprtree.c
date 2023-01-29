@@ -1,5 +1,32 @@
+#include<string.h>
 int yyerror();
 //symbol table functions
+int createSymbolTable(struct tnode* t)
+{
+	if(t==NULL)
+	{
+		return -1;
+	}
+	if(t->nodetype==DECNODE)
+	{
+		typeglob=createSymbolTable(t->left);
+		createSymbolTable(t->right);
+	}
+	if(t->nodetype==TYPENODE)
+	{
+		return t->type;
+	}
+	if(t->nodetype==VARNODE)
+	{
+		install(t->varname,typeglob,1);
+	}
+	if(t->nodetype=CONNECTORNODE)
+	{
+		createSymbolTable(t->left);
+		createSymbolTable(t->right);
+	}
+	return -1;
+}
 void GsymbolTableCreate()
 {
 	GHead=(struct Gsymbol*)malloc(sizeof(struct Gsymbol));
@@ -17,7 +44,7 @@ struct Gsymbol* Glookup(char* name)
 	}
 	return NULL;
 }
-void install(char* name, int type, int size, int binding)
+void install(char* name, int type, int size)
 {
 	struct Gsymbol* temp = Glookup(name);
 	if(temp!=NULL)
@@ -29,7 +56,6 @@ void install(char* name, int type, int size, int binding)
 	new->name = name;
 	new->type = type;
 	new->size = size;
-	new->binding = binding;
 	new->next = NULL;
 	temp = GHead;
 	while(temp->next!=NULL)
@@ -47,6 +73,18 @@ void GsymbolTablePrint()
 		temp = temp->next;
 	}
 }
+//symbol table functions end
+//create declaration tree
+struct tnode* createVarnodeDuringDeclaration(char* varname) {
+	struct tnode* temp;
+	temp = (struct tnode*)malloc(sizeof(struct tnode));
+	temp->nodetype = VARNODE;
+	temp->varname = varname;
+	temp->type = typeglob;
+	temp->left = NULL;
+	temp->right = NULL;
+	return temp;
+}
 struct tnode* createTree(int val, int type, char* varname, int nodetype, struct tnode* l, struct tnode* r) {
 	struct tnode* temp;
 	temp = (struct tnode*)malloc(sizeof(struct tnode));
@@ -60,16 +98,7 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 		{
 			if(temp->left->type!=BOOLTYPE)
 			{
-				yyerror("NO INT TYPE INSIDE IF CONDITION: TYPE ERROR\n");
-				exit(1);
-			}
-			break;
-		}
-		case IFELSENODE:
-		{
-			if(temp->left->type!=BOOLTYPE)
-			{
-				yyerror("NO INT TYPE INSIDE IF CONDITION: TYPE ERROR\n");
+				yyerror("NO INT TYPE INSIDE IF CONDITION: TYPE ERROR");
 				exit(1);
 			}
 			break;
@@ -78,64 +107,66 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 		{
 			if(temp->left->type!=BOOLTYPE)
 			{
-				yyerror("NO INT TYPE INSIDE WHILE CONDITION: TYPE ERROR\n");
+				yyerror("NO INT TYPE INSIDE WHILE CONDITION: TYPE ERROR");
 				exit(1);
 			}
 			break;
 		}
-		case LOGICOPNODE:
-		{
-			temp->varname = malloc(1);
-			temp->varname[0] = varname[0];
-			break;
-		}
-		case VARNODE:
-		{
-			temp->varname = malloc(1);
-			temp->varname[0] = varname[0];
-			break;
-		}
-		case NUMNODE:
-		{
-			temp->val = val;
-			break;
-		}
-		case MATHOPNODE:
-		{
-			if(temp->left->type!=temp->right->type && temp->left->type!=INTTYPE)
-			{
-				if(temp->left->type==BOOLTYPE)
-				{
-					yyerror("NO BOOLEAN IN MATH OPERATIONS : TYPE ERROR\n");
-					exit(1);
-				}
-			}
-			temp->varname = malloc(1);
-			temp->varname[0] = varname[0];
-			break;
-		}
-		case DOWHILENODE:
+		case IFELSENODE:
 		{
 			if(temp->left->type!=BOOLTYPE)
 			{
-				yyerror("NO INT TYPE INSIDE DO WHILE CONDITION: TYPE ERROR\n");
+				yyerror("NO INT TYPE INSIDE IF CONDITION: TYPE ERROR");
 				exit(1);
 			}
 			break;
 		}
 		case REPEATUNTILNODE:
 		{
-			if(temp->left->type!=BOOLTYPE)
+			if(temp->right->type!=BOOLTYPE)
 			{
-				yyerror("NO INT TYPE INSIDE REPEAT UNTIL CONDITION: TYPE ERROR\n");
+				yyerror("NO INT TYPE INSIDE WHILE CONDITION: TYPE ERROR");
 				exit(1);
 			}
 			break;
 		}
-
+		case DOWHILENODE:
+		{
+			if(temp->right->type!=BOOLTYPE)
+			{
+				yyerror("NO INT TYPE INSIDE WHILE CONDITION: TYPE ERROR");
+				exit(1);
+			}
+			break;
+		}
+		case NUMNODE:
+		{
+			temp->val = val;
+			temp->type = INTTYPE;
+			break;
+		}
+		case BOOLNODE:
+		{
+			temp->val = val;
+			temp->type = BOOLTYPE;
+			break;
+		}
+		case VARNODE:
+		{
+			temp->varname = varname;
+			struct Gsymbol* temp1 = Glookup(varname);
+			if(temp1==NULL)
+			{
+				yyerror("Variable not declared");
+				exit(1);
+			}
+			temp->type = temp1->type;
+			break;
+		}
 	}
 	return temp;
 }
+
 void preorder(struct tnode* tnode) {
 	if(tnode==NULL)
 	{
