@@ -15,18 +15,19 @@ typedef struct Gsymbol {
     int binding; //stores the static memory address allocated to the variable
     struct Gsymbol *next; //pointer to next symbol table entry
 }Gsymbol;
-struct Gsymbol* GHead;
+typedef struct gSymbolTable {
+    struct Gsymbol* head;
+}gSymbolTable;
+gSymbolTable* gst;
 //type of variable
 #define BOOLTYPE 0
 #define INTTYPE 1
 #define STRINGTYPE 2
 #define INVALIDTYPE -1
-//create and initialize global symbol table
-void GsymbolTableCreate();
+
+struct Gsymbol* joinnode(struct Gsymbol* head,struct Gsymbol* node);
 //lookup function
-struct Gsymbol* lookup(char* name);
-//install function
-void install(char* name, int type, int size);
+struct Gsymbol* lookup(struct  gSymbolTable* gst,char* name);
 //create abstract syntax tree
 struct tnode* createTree(int val, int type, char* varname, int nodetype, struct tnode* l, struct tnode* r);
 /*To evaluate an expression tree*/
@@ -55,9 +56,11 @@ void preorder(struct tnode* tnode);
 #define REPEATUNTILNODE 14
 #define DOWHILENODE 15
 #define TYPENODE 16
-#define DECLNODE 17
 #define BOOLNODE 18
-#define DECNODE 19
+#define STRNODE 19
+
+//create symbol table
+
 //generate code for the expression tree
 #define register_index int
 register_index codeGen(struct tnode* t,FILE*);
@@ -69,4 +72,5 @@ int label;
 int label1;
 int typeglob;
 void printtree(struct tnode* t);
-struct tnode* createVarnodeDuringDeclaration(char* varname);
+void assignbinding(struct  gSymbolTable* gst);
+int findtype(struct  gSymbolTable* gst,char* name);

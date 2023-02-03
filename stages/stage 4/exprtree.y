@@ -11,15 +11,50 @@
 	extern FILE *yyin;
 	nooffreereg=16;
 	int label=0;
+	struct gSymbolTable *gst;
 %}
 %union{
 	struct tnode *no;
-	char varname[100];
+	char *name;
+	int number;
+	struct Gsymbol *Symbol;
 }
 
-%type <no> expr STMNT SLIST INPUTSTMNT OUTPUTSTMNT program ID NUM ASSIGNSTMNT IFSTMNT WHILESTMNT IFELSESTMNT DOWHILESTMNT BREAKSTMNT CONTINUESTMNT REPEATUNTILSTMNT TYPE DECLARATIONS DECLSTMNT DEC VARLIST
-%token READ WRITE NUM ID ENDOFLINE ASSIGN PLUS MINUS MUL DIV BEG ENOFLINE END REPEAT BREAK CONTINUE UNTIL STARTC ENDC DECL INT STR
+%type <no> expr 
+%type <no> STMNT 
+%type <no> SLIST 
+%type <no> INPUTSTMNT 
+%type <no> OUTPUTSTMNT 
+%type <no> program 
+%type <no> ASSIGNSTMNT 
+%type <no> IDENTIFIER
+%type <no> IFSTMNT WHILESTMNT IFELSESTMNT DOWHILESTMNT BREAKSTMNT CONTINUESTMNT REPEATUNTILSTMNT
+
+%type <number> TYPE
+%type <name> ID
+%type <number> NUM
+%type <name> STR
+%type <Symbol> IDDECL DECLSTMNT DEC VARLIST DECLARATIONS
+
+%token READ 
+%token WRITE 
+%token NUM 
+%token ENDOFLINE 
+%token ASSIGN 
+%token PLUS MINUS MUL DIV ID
+%token REPEAT 
+%token BREAK 
+%token CONTINUE 
+%token UNTIL 
+%token STARTC 
+%token ENDC 
+%token DECL 
+%token INT STR
+%token BEGN ENDT
+%type<number> INT
+
 %token IF THEN ELSE WHILE DO  LT GT LE GE EQ NE AND OR NOT
+
 %left AND OR NOT
 %left LT GT LE GE EQ NE
 %left PLUS MINUS
@@ -27,38 +62,45 @@
 
 %%
 
-program : DECLARATIONS SLIST {
-				printf("test");
-				createSymbolTable($1);
+program : DECLARATIONS BEGN SLIST ENDT{
+				printtree($3);
 				FILE *target_file; 
     			target_file = fopen("ASSEMBLYCODE.xsm", "wb");
-				$$ = $2;
+				$$ = $3;
 				fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n",0,2056,0,0,0,0,0,0);
 				fprintf(target_file, "MOV SP, %d\n", 4096+(int)('z'-'a'));
-                codeGen($2,target_file);
+                codeGen($3,target_file);
 				fprintf(target_file, "INT 10");
 				fclose(target_file);
-                exit(0);
+				exit(0);
 			}
 		;
-	| SLIST{
+	| BEGN SLIST ENDT{
 				exit(0);
 			}
 		;
 
-DECLARATIONS: DECL STARTC DECLSTMNT ENDC {$$ = $3;}
+DECLARATIONS: DECL STARTC DECLSTMNT ENDC {gst=(struct gSymbolTable*)malloc(sizeof(struct gSymbolTable));gst->head=$3;assignbinding(gst);printsymboltable(gst);$$=$3;}
+	 | DECL STARTC ENDC {gst=(struct gSymbolTable*)malloc(sizeof(struct gSymbolTable));gst->head=NULL;$$=NULL;}
+	 ;
 ;
-DECLSTMNT: DECLSTMNT DEC {$$ = createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$1,$2);}
+DECLSTMNT: DECLSTMNT DEC {$$ = joinnode($1,$2); }
 	 | DEC {$$ = $1;}
 	 ;
-DEC: TYPE VARLIST ENDOFLINE {$$ = createTree(-1,INVALIDTYPE,NULL,DECLNODE,$1,$2);}
+DEC: TYPE VARLIST ENDOFLINE {struct Gsymbol* temp = $2;
+                                        while(temp!=NULL){
+                                            temp->type = $1;
+                                            temp = temp->next;
+                                        }
+                                        $$ = $2;}
 	 ;
-VARLIST: VARLIST ',' ID {$$ = createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$1,createVarnodeDuringDeclaration($1));}
-	 | ID {$$ = createVarnodeDuringDeclaration($1);}
+VARLIST: VARLIST ',' IDDECL {$$=joinnode($1,$3);}
+	 | IDDECL {$$ = $1;}
 	 ;
-
-TYPE: INT {$$ = createTree(-1,INTTYPE,NULL,TYPENODE,NULL,NULL);}
-	 | STR {$$ = createTree(-1,STRTYPE,NULL,TYPENODE,NULL,NULL);}
+IDDECL: ID {$$=createsymbolnode(gst,$<name>1,INVALIDTYPE,1);}
+	 ;
+TYPE: INT {$$ = INTTYPE;}
+	 | STR {$$ = STRTYPE;}
 	 ;
 
 SLIST: SLIST STMNT		{$$ = createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$1,$2);}
@@ -90,7 +132,6 @@ IFSTMNT : IF '(' expr ')' STARTC SLIST ENDC	{$$ = createTree(-1,INVALIDTYPE,NULL
 
 IFELSESTMNT: IF '(' expr ')' STARTC SLIST ENDC ELSE STARTC SLIST ENDC 	{$$ = createTree(-1,INVALIDTYPE,NULL,IFELSENODE,$3,createTree(-1,INVALIDTYPE,NULL,CONNECTORNODE,$6,$10));}
 	 ;
-
 WHILESTMNT : WHILE '(' expr ')' STARTC SLIST  ENDC	{$$ = createTree(-1,INVALIDTYPE,NULL,WHILENODE,$3,$6);}
 	 ;
 DOWHILESTMNT: DO  STARTC  SLIST ENDC WHILE '(' expr ')' ENDOFLINE	{$$ = createTree(-1,INVALIDTYPE,NULL,DOWHILENODE,$7,$3);}
@@ -102,8 +143,8 @@ CONTINUESTMNT: CONTINUE ENDOFLINE	{$$ = createTree(-1,INVALIDTYPE,NULL,CONTINUEN
 REPEATUNTILSTMNT: REPEAT STARTC SLIST ENDC UNTIL '(' expr ')' ENDOFLINE	{$$ = createTree(-1,INVALIDTYPE,NULL,REPEATUNTILNODE,$7,$3);}
 	 ;
 
-expr : expr PLUS expr		{$$ = createTree(-1,INTTYPE,"+",MATHOPNODE,$1,$3);}
-	 | expr MINUS expr  	{$$ = createTree(-1,INTTYPE,"-",MATHOPNODE,$1,$3);}
+expr : expr PLUS expr	{$$ = createTree(-1,INTTYPE,"+",MATHOPNODE,$1,$3);}
+	 | expr MINUS expr  {$$ = createTree(-1,INTTYPE,"-",MATHOPNODE,$1,$3);}
 	 | expr MUL expr	{$$ = createTree(-1,INTTYPE,"*",MATHOPNODE,$1,$3);}
 	 | expr DIV expr	{$$ = createTree(-1,INTTYPE,"/",MATHOPNODE,$1,$3);}
 	 | expr LT expr   	{$$=createTree(-1,BOOLTYPE,"<",LOGICOPNODE,$1,$3);}
@@ -114,10 +155,14 @@ expr : expr PLUS expr		{$$ = createTree(-1,INTTYPE,"+",MATHOPNODE,$1,$3);}
 	 | expr NE expr   	{$$=createTree(-1,BOOLTYPE,"!=",LOGICOPNODE,$1,$3);}
 	 | expr AND expr   	{$$=createTree(-1,BOOLTYPE,"&&",LOGICOPNODE,$1,$3);}
 	 | expr OR expr   	{$$=createTree(-1,BOOLTYPE,"||",LOGICOPNODE,$1,$3);}
-	 | NOT expr   	{$$=createTree(-1,BOOLTYPE,"!",LOGICOPNODE,$2,NULL);}
+	 | NOT expr   		{$$=createTree(-1,BOOLTYPE,"!",LOGICOPNODE,$2,NULL);}
 	 | '(' expr ')'		{$$ = $2;}
-	 | ID			{$$ = $1;}
-	 | NUM			{$$ = $1;}
+	 | IDENTIFIER	{$$=$1;}
+	 | NUM			    {$$ = createTree($<number>1, INTTYPE, NULL, NUMNODE,NULL,NULL);}
+     | STR              {$$ = createTree($<name>1, STRTYPE, NULL,STRNODE,NULL,NULL);}
+	 ;
+IDENTIFIER: ID {struct tnode* temp =createTree(-1,INVALIDTYPE,$<name>1,VARNODE,NULL,NULL);
+				temp->type=findtype(gst,temp->varname);$$=temp;}
 	 ;
 %%
 

@@ -42,88 +42,88 @@
      READ = 258,
      WRITE = 259,
      NUM = 260,
-     ID = 261,
-     ENDOFLINE = 262,
-     ASSIGN = 263,
-     PLUS = 264,
-     MINUS = 265,
-     MUL = 266,
-     DIV = 267,
-     BEG = 268,
-     ENOFLINE = 269,
-     END = 270,
-     REPEAT = 271,
-     BREAK = 272,
-     CONTINUE = 273,
-     UNTIL = 274,
-     STARTC = 275,
-     ENDC = 276,
-     DECL = 277,
-     INT = 278,
-     STR = 279,
-     IF = 280,
-     THEN = 281,
-     ELSE = 282,
-     WHILE = 283,
-     DO = 284,
-     LT = 285,
-     GT = 286,
-     LE = 287,
-     GE = 288,
-     EQ = 289,
-     NE = 290,
-     AND = 291,
-     OR = 292,
-     NOT = 293
+     ENDOFLINE = 261,
+     ASSIGN = 262,
+     PLUS = 263,
+     MINUS = 264,
+     MUL = 265,
+     DIV = 266,
+     ID = 267,
+     REPEAT = 268,
+     BREAK = 269,
+     CONTINUE = 270,
+     UNTIL = 271,
+     STARTC = 272,
+     ENDC = 273,
+     DECL = 274,
+     INT = 275,
+     STR = 276,
+     BEGN = 277,
+     ENDT = 278,
+     IF = 279,
+     THEN = 280,
+     ELSE = 281,
+     WHILE = 282,
+     DO = 283,
+     LT = 284,
+     GT = 285,
+     LE = 286,
+     GE = 287,
+     EQ = 288,
+     NE = 289,
+     AND = 290,
+     OR = 291,
+     NOT = 292
    };
 #endif
 /* Tokens.  */
 #define READ 258
 #define WRITE 259
 #define NUM 260
-#define ID 261
-#define ENDOFLINE 262
-#define ASSIGN 263
-#define PLUS 264
-#define MINUS 265
-#define MUL 266
-#define DIV 267
-#define BEG 268
-#define ENOFLINE 269
-#define END 270
-#define REPEAT 271
-#define BREAK 272
-#define CONTINUE 273
-#define UNTIL 274
-#define STARTC 275
-#define ENDC 276
-#define DECL 277
-#define INT 278
-#define STR 279
-#define IF 280
-#define THEN 281
-#define ELSE 282
-#define WHILE 283
-#define DO 284
-#define LT 285
-#define GT 286
-#define LE 287
-#define GE 288
-#define EQ 289
-#define NE 290
-#define AND 291
-#define OR 292
-#define NOT 293
+#define ENDOFLINE 261
+#define ASSIGN 262
+#define PLUS 263
+#define MINUS 264
+#define MUL 265
+#define DIV 266
+#define ID 267
+#define REPEAT 268
+#define BREAK 269
+#define CONTINUE 270
+#define UNTIL 271
+#define STARTC 272
+#define ENDC 273
+#define DECL 274
+#define INT 275
+#define STR 276
+#define BEGN 277
+#define ENDT 278
+#define IF 279
+#define THEN 280
+#define ELSE 281
+#define WHILE 282
+#define DO 283
+#define LT 284
+#define GT 285
+#define LE 286
+#define GE 287
+#define EQ 288
+#define NE 289
+#define AND 290
+#define OR 291
+#define NOT 292
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 15 "exprtree.y"
+#line 16 "exprtree.y"
 {
 	struct tnode *no;
-	char varname[100];
+	char *name;
+	int number;
+	struct Gsymbol *Symbol;
 }
 /* Line 1529 of yacc.c.  */
 #line 130 "y.tab.h"

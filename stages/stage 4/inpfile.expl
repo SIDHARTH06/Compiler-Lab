@@ -1,14 +1,8 @@
 decl
 {
     int a;
+    int b;
 }
-a=1;
-while(a<5)
-{
-a=a+1;
-if(a==3) 
-{
-break;
-}
+begin
 write(a);
-}
+end

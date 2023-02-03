@@ -1,99 +1,114 @@
 #include<string.h>
 int yyerror();
 //symbol table functions
-int createSymbolTable(struct tnode* t)
+void printtree(struct tnode *t)
 {
 	if(t==NULL)
-	{
-		return -1;
-	}
-	if(t->nodetype==DECNODE)
-	{
-		typeglob=createSymbolTable(t->left);
-		createSymbolTable(t->right);
-	}
-	if(t->nodetype==TYPENODE)
-	{
-		return t->type;
-	}
-	if(t->nodetype==VARNODE)
-	{
-		install(t->varname,typeglob,1);
-	}
-	if(t->nodetype=CONNECTORNODE)
-	{
-		createSymbolTable(t->left);
-		createSymbolTable(t->right);
-	}
-	return -1;
+		return;
+	printtree(t->left);
+	printf("%d ",t->nodetype);
+	printtree(t->right);
 }
-void GsymbolTableCreate()
+struct Gsymbol* joinnode(struct Gsymbol* head,struct Gsymbol* node)
 {
-	GHead=(struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+	struct Gsymbol* temp=head;
+	if(head==NULL)
+	{
+		head=node;
+		return head;
+	}
+	while(temp->next!=NULL)
+	{
+		temp=temp->next;
+	}
+	temp->next=node;
+	return head;
 }
-struct Gsymbol* Glookup(char* name)
+//create and initialize global symbol table
+//lookup function
+struct Gsymbol* lookup(struct gSymbolTable* gst, char * name){
+	struct Gsymbol* temp;
+	temp=gst->head;
+    while(temp!= NULL){
+        if(strcmp(temp->name,name) == 0){
+            return temp;
+        }
+        temp = temp -> next;
+    }
+    return NULL;
+}
+//install function
+struct Gsymbol* createsymbolnode(struct  gSymbolTable* gst,char* name,int type,int size)
 {
-	struct Gsymbol* temp = GHead;
+	struct Gsymbol* temp;
+	temp=(struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+	temp->name=malloc(sizeof(char)*256);
+	temp->name=name;
+	temp->type=type;
+	temp->size=size;
+	temp->binding=0;
+	temp->next=NULL;
+	return temp;
+}
+// findtype function
+int findtype(struct  gSymbolTable* gst, char* name)
+{
+	struct Gsymbol* temp=gst->head;
 	while(temp!=NULL)
 	{
 		if(strcmp(temp->name,name)==0)
 		{
-			return temp;
+			return temp->type;
 		}
-		temp = temp->next;
+		temp=temp->next;
 	}
-	return NULL;
+	return -1;
 }
-void install(char* name, int type, int size)
+//assign binding
+void assignbinding(struct gSymbolTable* gst)
 {
-	struct Gsymbol* temp = Glookup(name);
-	if(temp!=NULL)
-	{
-		yyerror("Variable already declared\n");
-		exit(1);
-	}
-	struct Gsymbol* new = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
-	new->name = name;
-	new->type = type;
-	new->size = size;
-	new->next = NULL;
-	temp = GHead;
-	while(temp->next!=NULL)
-	{
-		temp = temp->next;
-	}
-	temp->next = new;
-}
-void GsymbolTablePrint()
-{
-	struct Gsymbol* temp = GHead;
+	struct Gsymbol* temp=gst->head;
+	int binding=4096;
 	while(temp!=NULL)
 	{
-		printf("Name: %s\tType: %d\tSize: %d\tBinding: %d",temp->name,temp->type,temp->size,temp->binding);
-		temp = temp->next;
+		temp->binding=binding;
+		binding=binding+temp->size;
+		temp=temp->next;
+	}
+}
+//print symbol table
+void printsymboltable(struct gSymbolTable* gst)
+{
+	struct Gsymbol* temp=gst->head;
+	printf("%-20s%-20s%-20s%-20s","NAME","TYPE","SIZE","BINDING\n");
+	printf("%-20s%-20s%-20s%-20s","----","----","----","----\n");
+	while(temp!=NULL)
+	{
+		printf("%-20s%-20d%-20d%-20d\n",temp->name,temp->type,temp->size,temp->binding);
+		temp=temp->next;
 	}
 }
 //symbol table functions end
 //create declaration tree
-struct tnode* createVarnodeDuringDeclaration(char* varname) {
-	struct tnode* temp;
-	temp = (struct tnode*)malloc(sizeof(struct tnode));
-	temp->nodetype = VARNODE;
-	temp->varname = varname;
-	temp->type = typeglob;
-	temp->left = NULL;
-	temp->right = NULL;
-	return temp;
-}
 struct tnode* createTree(int val, int type, char* varname, int nodetype, struct tnode* l, struct tnode* r) {
 	struct tnode* temp;
 	temp = (struct tnode*)malloc(sizeof(struct tnode));
 	temp->nodetype = nodetype;
 	temp->left = l;
 	temp->right = r;
-	temp->type=type;
+	temp->Gentry=(struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	switch(temp->nodetype) 
 	{
+		case ASSIGNNODE:
+		{
+			printf("test");
+			if(temp->left->type!=temp->right->type)
+			{
+				yyerror("TYPE MISMATCH: TYPE ERROR");
+				exit(1);
+			}
+			break;
+		}
 		case IFNODE:
 		{
 			if(temp->left->type!=BOOLTYPE)
@@ -145,28 +160,37 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 			temp->type = INTTYPE;
 			break;
 		}
-		case BOOLNODE:
-		{
-			temp->val = val;
-			temp->type = BOOLTYPE;
-			break;
-		}
 		case VARNODE:
 		{
-			temp->varname = varname;
-			struct Gsymbol* temp1 = Glookup(varname);
-			if(temp1==NULL)
+			temp->Gentry = lookup(gst,varname);
+			temp->varname=malloc(sizeof(char)*256);
+			strcpy(temp->varname,varname);
+			if(temp->Gentry==NULL)
 			{
 				yyerror("Variable not declared");
 				exit(1);
 			}
-			temp->type = temp1->type;
+			temp->type = temp->Gentry->type;
+			break;
+		}
+		case MATHOPNODE:
+		{
+			if(temp->left->type!=INTTYPE || temp->right->type!=INTTYPE)
+			{
+				yyerror("TYPE MISMATCH IN MATH OPERATION");
+				exit(1);
+			}
+			temp->type = INTTYPE;
+			break;
+		}
+		case STRNODE:
+		{
+			temp->type = STRTYPE;
 			break;
 		}
 	}
 	return temp;
 }
-
 void preorder(struct tnode* tnode) {
 	if(tnode==NULL)
 	{
@@ -283,12 +307,21 @@ register_index codeGen(struct tnode *t,FILE *target_file){
     else if(t->nodetype == ASSIGNNODE){
         reg1 = getReg();
 		reg2=codeGen(t->right,target_file);
-		int variableposition = (int)(t->left->varname[0] - 'a') + 4096;
-		fprintf(target_file, "MOV R%d, %d\n", reg1, variableposition);
-        fprintf(target_file,"MOV [R%d], R%d\n",reg1,reg2);
-		freeReg();
-		freeReg();
-        return -1;
+		printtree(t->left);
+		if(lookup(gst,t->left->varname)==NULL)
+		{
+			yyerror("Variable not declared");
+			exit(1);
+		}
+		else
+		{
+			int variableposition = lookup(gst,t->left->varname)->binding;
+			fprintf(target_file, "MOV R%d, %d\n", reg1, variableposition);
+        	fprintf(target_file,"MOV [R%d], R%d\n",reg1,reg2);
+			freeReg();
+			freeReg();
+        	return -1;
+		}
     }
 	else if(t->nodetype==NUMNODE)
 	{
@@ -299,15 +332,32 @@ register_index codeGen(struct tnode *t,FILE *target_file){
 	else if(t->nodetype==VARNODE)
 	{
 		reg1=getReg();
-		int variableposition = (int)(t->varname[0]-'a') + 4096;
-		fprintf(target_file,"MOV R%d, %d\n",reg1,variableposition);
-		fprintf(target_file,"MOV R%d, [R%d]\n",reg1,reg1);
-		return reg1;
+		if(lookup(gst,t->varname)==NULL)
+		{
+			yyerror("Variable not declared");
+			exit(1);
+		}
+		else
+		{
+			int variableposition = lookup(gst,t->varname)->binding;
+			fprintf(target_file,"MOV R%d, %d\n",reg1,variableposition);
+			fprintf(target_file,"MOV R%d, [R%d]\n",reg1,reg1);
+			return reg1;
+		}
 	}
 	else if(t->nodetype==READNODE)
 	{
 		reg1=getReg();
-		int variableposition = (int)(t->varname[0]-'a') + 4096;
+		int variableposition = 4096;
+		if(lookup(gst,t->left->varname)==NULL)
+		{
+			yyerror("Variable not declared");
+			exit(1);
+		}
+		else
+		{
+			int variableposition = lookup(gst,t->left->varname)->binding;
+		}
 		fprintf(target_file, "MOV R%d, \"Read\"\n", reg1);
 		fprintf(target_file, "PUSH R%d\n", reg1); //system call fn
 		fprintf(target_file, "MOV R%d, -1\n", reg1);
@@ -369,7 +419,6 @@ register_index codeGen(struct tnode *t,FILE *target_file){
             case '/' : { fprintf(target_file,"DIV R%d, R%d\n",reg1,reg2);freeReg();
                        break;}
         }
-		
         return reg1;
     }
 	else if(t->nodetype== BREAKNODE)
@@ -436,6 +485,11 @@ register_index codeGen(struct tnode *t,FILE *target_file){
 		label++;
 		label1++;
 		return -1;
+	}
+	else if(t->nodetype==STRNODE)
+	{
+		fprintf(target_file,"MOV R%d, \"%s\"\n",reg1,t->varname);
+		return reg1;
 	}
 }
 

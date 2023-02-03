@@ -3,14 +3,14 @@
 	#include <stdio.h>
 	#include "y.tab.h"
 	#include "exprtree.h"
-	int number;
+	int numb;
     int yyerror();
 
 %}
 int yyerror();
 %%
-"begin"  {return BEG;}
-"end"	 {return END;}
+"begin"  {return BEGN;}
+"end"	 {return ENDT;}
 "read"	 {return READ;}
 "write"	 {return WRITE;}
 "if" 	 {return IF;}
@@ -27,8 +27,9 @@ int yyerror();
 [{]	{return STARTC;}
 [}]	{return ENDC;}
 "do"     {return DO;}
-[_a-zA-Z][_a-zA-Z0-9]*	{strcpy(yylval.varname,yytext); return ID; }
-[0-9]+	{number = atoi(yytext); yylval.no = createTree(number,INTTYPE,NULL,NUMNODE,NULL,NULL); return NUM;}
+[_a-zA-Z][_a-zA-Z0-9]*	{yylval.name=strdup(yytext);return ID; }
+[0-9]+	{numb = atoi(yytext);yylval.number=numb;return NUM;}
+\"((\\\")|[^"])*\" {yylval.name=strdup(yytext);return STR;}
 "="	 {return ASSIGN;}
 "+"	{return PLUS;}
 "-"	{return MINUS;}
