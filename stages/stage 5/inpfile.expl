@@ -1,0 +1,9 @@
+decl
+{
+    int a,* b;
+}
+begin
+a=10;
+b=&a;
+end
+
