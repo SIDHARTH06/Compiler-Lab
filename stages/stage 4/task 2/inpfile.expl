@@ -1,0 +1,7 @@
+decl
+{
+    int a[6];
+}
+begin
+write(a[5]);
+end

@@ -1,0 +1,8 @@
+decl
+{
+    int abc[1][1];
+}
+begin
+read(abc[0][0]);
+write(abc[0][0]);
+end
