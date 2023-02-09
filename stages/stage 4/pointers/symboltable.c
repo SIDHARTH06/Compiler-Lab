@@ -1,4 +1,4 @@
-#include<string.h>
+#include <string.h>
 struct Gsymbol *joinnode(struct Gsymbol *head, struct Gsymbol *node)
 {
 	struct Gsymbol *temp = head;
@@ -18,7 +18,7 @@ struct Gsymbol *joinnode(struct Gsymbol *head, struct Gsymbol *node)
 // lookup function
 struct Gsymbol *lookup(struct gSymbolTable *gst, char *name)
 {
-	//check for segmentation fault error
+	// check for segmentation fault error
 	struct Gsymbol *temp;
 	temp = gst->head;
 	while (temp != NULL)
@@ -48,7 +48,7 @@ struct Gsymbol *createsymbolnode(struct gSymbolTable *gst, char *name, int type,
 // findtype function
 int findtype(struct gSymbolTable *gst, char *name)
 {
-	//check for segmentation fault
+	// check for segmentation fault
 	struct Gsymbol *temp = gst->head;
 	while (temp != NULL)
 	{
