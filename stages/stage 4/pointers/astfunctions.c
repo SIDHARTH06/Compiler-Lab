@@ -24,9 +24,9 @@ struct tnode *createTree(int val, int type, char *varname, int nodetype, struct 
 	{
 	case ASSIGNNODE:
 	{
-		if (!((temp->left->nodetype==PTRNODE && temp->right->nodetype==ADDRNODE) || (temp->left->nodetype==VARNODE && temp->right->nodetype==ADDRNODE)))
+		if (!((temp->left->nodetype == PTRNODE && temp->right->nodetype == ADDRNODE) || (temp->left->nodetype == VARNODE && temp->right->nodetype == ADDRNODE)))
 		{
-			if(temp->left->type != temp->right->type)
+			if (temp->left->type != temp->right->type)
 			{
 				yyerror("TYPE MISMATCH IN ASSIGNMENT");
 				exit(1);
@@ -256,14 +256,15 @@ register_index codeGen(struct tnode *t, FILE *target_file)
 
 	else if (t->nodetype == ASSIGNNODE)
 	{
-		if(t->left->nodetype == PTRNODE){
-            reg2 = codeGen(target_file,t->left->left);
-            reg3 = codeGen(target_file,t->right);
-            fprintf(target_file, "MOV [R%d], R%d\n", reg2, reg3);
-            freeReg();
-            freeReg();
-            return -1;
-        }
+		if (t->left->nodetype == PTRNODE)
+		{
+			reg2 = codeGen(target_file, t->left->left);
+			reg3 = codeGen(target_file, t->right);
+			fprintf(target_file, "MOV [R%d], R%d\n", reg2, reg3);
+			freeReg();
+			freeReg();
+			return -1;
+		}
 		reg1 = getReg();
 		variableposition = t->left->Gentry->binding;
 		fprintf(target_file, "MOV R%d, %d\n", reg1, variableposition);
@@ -608,95 +609,95 @@ register_index codeGen(struct tnode *t, FILE *target_file)
 		return reg1;
 	}
 }
-	int evaluate(struct tnode * t)
+int evaluate(struct tnode *t)
+{
+	int x, y;
+	if (t->nodetype == NUMNODE)
+		return t->val;
+	else if (t->nodetype == VARNODE)
+		return t->Gentry->name;
+	else if (t->nodetype == ASSIGNNODE)
 	{
-		int x, y;
-		if (t->nodetype == NUMNODE)
-			return t->val;
-		else if (t->nodetype == VARNODE)
-			return t->Gentry->name;
-		else if (t->nodetype == ASSIGNNODE)
+		x = evaluate(t->right);
+		t->left->Gentry->name = x;
+		return x;
+	}
+	else if (t->nodetype == READNODE)
+	{
+		scanf("%d", &x);
+		t->left->Gentry->name = x;
+		return x;
+	}
+	else if (t->nodetype == WRITENODE)
+	{
+		x = evaluate(t->left);
+		printf("%d", x);
+		return x;
+	}
+	else if (t->nodetype == CONNECTORNODE)
+	{
+		x = evaluate(t->left);
+		y = evaluate(t->right);
+		return y;
+	}
+	else if (t->nodetype == MATHOPNODE)
+	{
+		x = evaluate(t->left);
+		y = evaluate(t->right);
+		switch (t->varname[0])
 		{
-			x = evaluate(t->right);
-			t->left->Gentry->name = x;
-			return x;
-		}
-		else if (t->nodetype == READNODE)
-		{
-			scanf("%d", &x);
-			t->left->Gentry->name = x;
-			return x;
-		}
-		else if (t->nodetype == WRITENODE)
-		{
-			x = evaluate(t->left);
-			printf("%d", x);
-			return x;
-		}
-		else if (t->nodetype == CONNECTORNODE)
-		{
-			x = evaluate(t->left);
-			y = evaluate(t->right);
-			return y;
-		}
-		else if (t->nodetype == MATHOPNODE)
-		{
-			x = evaluate(t->left);
-			y = evaluate(t->right);
-			switch (t->varname[0])
-			{
-			case '+':
-				return x + y;
-			case '-':
-				return x - y;
-			case '*':
-				return x * y;
-			case '/':
-				return x / y;
-			}
-		}
-		else if (t->nodetype == BREAKNODE)
-		{
-			return -1;
-		}
-		else if (t->nodetype == CONTINUENODE)
-		{
-			return -1;
-		}
-		else if (t->nodetype == WHILENODE)
-		{
-			while (evaluate(t->left))
-			{
-				if (evaluate(t->right) == -1)
-					break;
-			}
-			return -1;
-		}
-		else if (t->nodetype == IFNODE)
-		{
-			if (evaluate(t->left))
-				evaluate(t->right);
-			return -1;
-		}
-		else if (t->nodetype == IFELSENODE)
-		{
-			if (evaluate(t->left))
-				evaluate(t->right->left);
-			else
-				evaluate(t->right->right);
-			return -1;
-		}
-		else if (t->nodetype == DOWHILENODE)
-		{
-			do
-			{
-				if (evaluate(t->left) == -1)
-					break;
-			} while (evaluate(t->right));
-			return -1;
-		}
-		else if (t->nodetype == STRNODE)
-		{
-			return -1;
+		case '+':
+			return x + y;
+		case '-':
+			return x - y;
+		case '*':
+			return x * y;
+		case '/':
+			return x / y;
 		}
 	}
+	else if (t->nodetype == BREAKNODE)
+	{
+		return -1;
+	}
+	else if (t->nodetype == CONTINUENODE)
+	{
+		return -1;
+	}
+	else if (t->nodetype == WHILENODE)
+	{
+		while (evaluate(t->left))
+		{
+			if (evaluate(t->right) == -1)
+				break;
+		}
+		return -1;
+	}
+	else if (t->nodetype == IFNODE)
+	{
+		if (evaluate(t->left))
+			evaluate(t->right);
+		return -1;
+	}
+	else if (t->nodetype == IFELSENODE)
+	{
+		if (evaluate(t->left))
+			evaluate(t->right->left);
+		else
+			evaluate(t->right->right);
+		return -1;
+	}
+	else if (t->nodetype == DOWHILENODE)
+	{
+		do
+		{
+			if (evaluate(t->left) == -1)
+				break;
+		} while (evaluate(t->right));
+		return -1;
+	}
+	else if (t->nodetype == STRNODE)
+	{
+		return -1;
+	}
+}

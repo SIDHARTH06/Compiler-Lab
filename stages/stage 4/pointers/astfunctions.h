@@ -24,14 +24,13 @@ typedef struct gSymbolTable
 } gSymbolTable;
 gSymbolTable *gst;
 
-//functions for symbol table
+// functions for symbol table
 
 void assignbinding(struct gSymbolTable *gst);
 int findtype(struct gSymbolTable *gst, char *name);
 int evaluate(struct tnode *t);
 int getval(char *name);
 void setval(char *name, int val);
-
 
 // type of variable
 #define BOOLTYPE 0
@@ -57,7 +56,6 @@ void printtree(struct tnode *t);
 #define INVALIDTYPE -1
 #define PTRTYPE 3
 #define ADDRTYPE 4
-
 
 // nodetype definition
 #define MATHOPNODE 1
