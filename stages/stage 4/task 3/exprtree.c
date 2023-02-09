@@ -104,7 +104,6 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 	{
 		case ASSIGNNODE:
 		{
-			printf("test");
 			if(temp->left->type!=temp->right->type)
 			{
 				yyerror("TYPE MISMATCH: TYPE ERROR");
@@ -178,6 +177,8 @@ struct tnode* createTree(int val, int type, char* varname, int nodetype, struct 
 		}
 		case MATHOPNODE:
 		{
+			temp->varname=malloc(1);
+			temp->varname[0]=varname[0];
 			if(temp->left->type!=INTTYPE || temp->right->type!=INTTYPE)
 			{
 				yyerror("TYPE MISMATCH IN MATH OPERATION");

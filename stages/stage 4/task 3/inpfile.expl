@@ -1,8 +1,35 @@
 decl
 {
-    int abc[1][1];
+   int n,arr[50],i,j,dup;
 }
 begin
-read(abc[0][0]);
-write(abc[0][0]);
+read(n);
+i=0;
+while(i<n)
+{
+    read(arr[i]);
+    i = i+1;
+}
+i=0;
+while(i<n)
+{
+    j=i;
+    while(j<n)
+    {
+        if(arr[i]>arr[j])
+        {
+            dup = arr[i];
+            arr[i] = arr[j];
+            arr[j] = dup;
+        }
+        j = j + 1;
+    }
+    i = i+1;
+}
+i=0;
+while(i<n)
+{
+    write(arr[i]);
+    i = i+1;
+}
 end

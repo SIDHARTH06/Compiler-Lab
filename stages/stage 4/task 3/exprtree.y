@@ -172,8 +172,7 @@ IDENTIFIER: ID {struct tnode* temp =createTree(-1,INVALIDTYPE,$<name>1,VARNODE,N
 				temp->type=findtype(gst,temp->varname);$$=temp;}
 		    | ID '[' expr ']' {struct tnode* temp =createTree(-1,INVALIDTYPE,$<name>1,VARNODE,$3,NULL);
 				temp->type=findtype(gst,temp->varname);
-				printf("%d",evaluate($3));
-				if(temp->Gentry->size<=evaluate($3))
+				if($3->nodetype==NUMNODE && temp->Gentry->size<=evaluate($3))
 				{
 					yyerror("Array index out of bounds");
 					exit(1);
