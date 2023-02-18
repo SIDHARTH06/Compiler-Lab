@@ -22,6 +22,7 @@ int yyerror();
 "decl"	 {return DECL;}
 "int"   {return INT;}
 "str"   {return STR;}
+\"([^\\\"]|\\.)*\" {yylval.name=strdup(yytext);return STRNG;}
 [,] 	{return *yytext;}
 [{]	{return STARTC;}
 [}]	{return ENDC;}
@@ -36,6 +37,7 @@ int yyerror();
 "/"	{return DIV;}
 "<"	{return LT;}
 ">"	{return GT;}
+"%" {return MOD;}
 "&" {return ADDRESS;}
 "=="	{return EQ;}
 "!="	{return NE;}

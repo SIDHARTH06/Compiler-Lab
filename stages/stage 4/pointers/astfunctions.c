@@ -5,10 +5,10 @@ void printtree(struct tnode *t)
 {
 	if (t == NULL)
 		return;
-	printtree(t->left);
 	printf("%d ", t->nodetype);
-	if (t->varname != NULL)
-		printf("%s", t->varname);
+	if (t->varname != NULL && t->nodetype != STRNODE)
+		printf("%s ", t->varname);
+	printtree(t->left);
 	printtree(t->right);
 }
 // create declaration tree
@@ -112,6 +112,8 @@ struct tnode *createTree(int val, int type, char *varname, int nodetype, struct 
 	}
 	case STRNODE:
 	{
+		temp->varname = malloc(sizeof(char) * 256);
+		strcpy(temp->varname, varname);
 		temp->type = STRTYPE;
 		break;
 	}
@@ -258,8 +260,8 @@ register_index codeGen(struct tnode *t, FILE *target_file)
 	{
 		if (t->left->nodetype == PTRNODE)
 		{
-			reg2 = codeGen(target_file, t->left->left);
-			reg3 = codeGen(target_file, t->right);
+			reg2 = codeGen(t->left->left, target_file);
+			reg3 = codeGen(t->right, target_file);
 			fprintf(target_file, "MOV [R%d], R%d\n", reg2, reg3);
 			freeReg();
 			freeReg();
@@ -410,18 +412,18 @@ register_index codeGen(struct tnode *t, FILE *target_file)
 			fprintf(target_file, "MOV R%d, %d\n", reg1, variableposition);
 			if (t->left->left != NULL && t->left->right == NULL)
 			{
-				reg2 = codeGen(target_file, t->left->left);
+				reg2 = codeGen(t->left->left, target_file);
 				fprintf(target_file, "ADD R%d, R%d\n", reg1, reg2);
 				freeReg();
 			}
 			else if (t->left->left != NULL && t->left->right != NULL)
 			{
-				reg2 = codeGen(target_file, t->left->left);
+				reg2 = codeGen(t->left->left, target_file);
 				printf("%d\n", t->left->Gentry->length);
 				fprintf(target_file, "MUL R%d, %d\n", reg2, t->left->Gentry->length);
 				fprintf(target_file, "ADD R%d, R%d\n", reg1, reg2);
 				freeReg();
-				reg2 = codeGen(target_file, t->left->right);
+				reg2 = codeGen(t->left->right, target_file);
 				fprintf(target_file, "ADD R%d, R%d\n", reg1, reg2);
 				freeReg();
 			}
@@ -447,7 +449,7 @@ register_index codeGen(struct tnode *t, FILE *target_file)
 		{
 			reg1 = getReg();
 			reg2 = codeGen(t->left, target_file);
-			fprintf(target_file, "MOV R%d, %d\n", reg1, t->left->val);
+			//fprintf(target_file, "MOV R%d, \"%s\" \n", reg1, t->left->varname);
 			fprintf(target_file, "MOV R%d, \"Write\"\n", reg1);
 			fprintf(target_file, "PUSH R%d\n", reg1); // system call fn
 			fprintf(target_file, "MOV R%d, -2\n", reg1);
@@ -501,6 +503,12 @@ register_index codeGen(struct tnode *t, FILE *target_file)
 		case '/':
 		{
 			fprintf(target_file, "DIV R%d, R%d\n", reg1, reg2);
+			freeReg();
+			break;
+		}
+		case 'M':
+		{
+			fprintf(target_file, "MOD R%d, R%d\n", reg1, reg2);
 			freeReg();
 			break;
 		}

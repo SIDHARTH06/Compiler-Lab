@@ -1,4 +1,0 @@
-load --os /home/anonymous/OS_lab/Assignments/Stage_8/os_startup_st8.xsm
-load --int=timer /home/anonymous/OS_lab/Assignments/Stage_8/sample_timer.xsm
-load --init /home/anonymous/OS_lab/Assignments/Stage_7/squares_abi.xsm
-load --int=10  /home/anonymous/OS_lab/myexpos/spl/spl_progs/halt_prog.xsm

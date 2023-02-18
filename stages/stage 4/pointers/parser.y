@@ -34,17 +34,19 @@
 
 %type <number> TYPE
 %type <name> ID
+%type <name> STRNG
 %type <number> NUM
 %type <name> STR
 %type <Symbol> IDDECL DECLSTMNT DEC VARLIST DECLARATIONS
 
+%token STRNG
 %token ADDRESS
 %token READ 
 %token WRITE 
 %token NUM 
 %token ENDOFLINE 
 %token ASSIGN 
-%token PLUS MINUS MUL DIV ID
+%token PLUS MINUS MUL DIV ID MOD
 %token REPEAT 
 %token BREAK 
 %token CONTINUE 
@@ -62,6 +64,7 @@
 %left LT GT LE GE EQ NE
 %left PLUS MINUS
 %left MUL DIV
+%left MOD
 
 %%
 
@@ -99,9 +102,16 @@ program : DECLARATIONS BEGN SLIST ENDT
 
 DECLARATIONS: DECL STARTC DECLSTMNT ENDC 
 	{
+
 	 	gst=(struct gSymbolTable*)malloc(sizeof(struct gSymbolTable));
 	 	gst->head=$3;assignbinding(gst);
-	 	printsymboltable(gst);
+		if(findduplicate(gst))
+		{
+			yyerror("Duplicate declaration");
+			exit(1);
+		}
+
+	 	//printsymboltable(gst);
 	 	$$=$3;
 	}
 	| DECL STARTC ENDC 
@@ -284,6 +294,7 @@ expr : expr PLUS expr	{$$ = createTree(-1,INTTYPE,"+",MATHOPNODE,$1,$3);}
 	 | expr MINUS expr  {$$ = createTree(-1,INTTYPE,"-",MATHOPNODE,$1,$3);}
 	 | expr MUL expr	{$$ = createTree(-1,INTTYPE,"*",MATHOPNODE,$1,$3);}
 	 | expr DIV expr	{$$ = createTree(-1,INTTYPE,"/",MATHOPNODE,$1,$3);}
+	 | expr MOD expr	{$$ = createTree(-1,INTTYPE,"M",MATHOPNODE,$1,$3);}
 	 | expr LT expr   	{$$ = createTree(-1,BOOLTYPE,"<",LOGICOPNODE,$1,$3);}
 	 | expr GT expr   	{$$ = createTree(-1,BOOLTYPE,">",LOGICOPNODE,$1,$3);}
 	 | expr LE expr   	{$$ = createTree(-1,BOOLTYPE,"<=",LOGICOPNODE,$1,$3);}
@@ -296,7 +307,7 @@ expr : expr PLUS expr	{$$ = createTree(-1,INTTYPE,"+",MATHOPNODE,$1,$3);}
 	 | '(' expr ')'		{$$ = $2;}
 	 | IDENTIFIER		{$$ = $1;}
 	 | NUM			    {$$ = createTree($<number>1, INTTYPE, NULL, NUMNODE,NULL,NULL);}
-     | STR              {$$ = createTree($<name>1, STRTYPE, NULL,STRNODE,NULL,NULL);}
+     | STRNG              {$$ = createTree(-1, STRTYPE, $<name>1,STRNODE,NULL,NULL);}
 	 ;
 
 

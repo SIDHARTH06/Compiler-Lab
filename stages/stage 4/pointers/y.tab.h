@@ -39,81 +39,85 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     ADDRESS = 258,
-     READ = 259,
-     WRITE = 260,
-     NUM = 261,
-     ENDOFLINE = 262,
-     ASSIGN = 263,
-     PLUS = 264,
-     MINUS = 265,
-     MUL = 266,
-     DIV = 267,
-     ID = 268,
-     REPEAT = 269,
-     BREAK = 270,
-     CONTINUE = 271,
-     UNTIL = 272,
-     STARTC = 273,
-     ENDC = 274,
-     DECL = 275,
-     INT = 276,
-     STR = 277,
-     BEGN = 278,
-     ENDT = 279,
-     IF = 280,
-     THEN = 281,
-     ELSE = 282,
-     WHILE = 283,
-     DO = 284,
-     LT = 285,
-     GT = 286,
-     LE = 287,
-     GE = 288,
-     EQ = 289,
-     NE = 290,
-     AND = 291,
-     OR = 292,
-     NOT = 293
+     STRNG = 258,
+     ADDRESS = 259,
+     READ = 260,
+     WRITE = 261,
+     NUM = 262,
+     ENDOFLINE = 263,
+     ASSIGN = 264,
+     PLUS = 265,
+     MINUS = 266,
+     MUL = 267,
+     DIV = 268,
+     ID = 269,
+     MOD = 270,
+     REPEAT = 271,
+     BREAK = 272,
+     CONTINUE = 273,
+     UNTIL = 274,
+     STARTC = 275,
+     ENDC = 276,
+     DECL = 277,
+     INT = 278,
+     STR = 279,
+     BEGN = 280,
+     ENDT = 281,
+     IF = 282,
+     THEN = 283,
+     ELSE = 284,
+     WHILE = 285,
+     DO = 286,
+     LT = 287,
+     GT = 288,
+     LE = 289,
+     GE = 290,
+     EQ = 291,
+     NE = 292,
+     AND = 293,
+     OR = 294,
+     NOT = 295
    };
 #endif
 /* Tokens.  */
-#define ADDRESS 258
-#define READ 259
-#define WRITE 260
-#define NUM 261
-#define ENDOFLINE 262
-#define ASSIGN 263
-#define PLUS 264
-#define MINUS 265
-#define MUL 266
-#define DIV 267
-#define ID 268
-#define REPEAT 269
-#define BREAK 270
-#define CONTINUE 271
-#define UNTIL 272
-#define STARTC 273
-#define ENDC 274
-#define DECL 275
-#define INT 276
-#define STR 277
-#define BEGN 278
-#define ENDT 279
-#define IF 280
-#define THEN 281
-#define ELSE 282
-#define WHILE 283
-#define DO 284
-#define LT 285
-#define GT 286
-#define LE 287
-#define GE 288
-#define EQ 289
-#define NE 290
-#define AND 291
-#define OR 292
-#define NOT 293
+#define STRNG 258
+#define ADDRESS 259
+#define READ 260
+#define WRITE 261
+#define NUM 262
+#define ENDOFLINE 263
+#define ASSIGN 264
+#define PLUS 265
+#define MINUS 266
+#define MUL 267
+#define DIV 268
+#define ID 269
+#define MOD 270
+#define REPEAT 271
+#define BREAK 272
+#define CONTINUE 273
+#define UNTIL 274
+#define STARTC 275
+#define ENDC 276
+#define DECL 277
+#define INT 278
+#define STR 279
+#define BEGN 280
+#define ENDT 281
+#define IF 282
+#define THEN 283
+#define ELSE 284
+#define WHILE 285
+#define DO 286
+#define LT 287
+#define GT 288
+#define LE 289
+#define GE 290
+#define EQ 291
+#define NE 292
+#define AND 293
+#define OR 294
+#define NOT 295
 
 
 
@@ -128,7 +132,7 @@ typedef union YYSTYPE
 	struct Gsymbol *Symbol;
 }
 /* Line 1529 of yacc.c.  */
-#line 132 "y.tab.h"
+#line 136 "y.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

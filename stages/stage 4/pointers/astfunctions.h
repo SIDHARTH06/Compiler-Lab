@@ -25,7 +25,6 @@ typedef struct gSymbolTable
 gSymbolTable *gst;
 
 // functions for symbol table
-
 void assignbinding(struct gSymbolTable *gst);
 int findtype(struct gSymbolTable *gst, char *name);
 int evaluate(struct tnode *t);
@@ -91,3 +90,4 @@ int nooffreereg;
 int label;
 int label1;
 int typeglob;
+int findduplicate(struct gSymbolTable *gst);

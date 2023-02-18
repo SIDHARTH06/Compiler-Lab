@@ -83,4 +83,25 @@ void printsymboltable(struct gSymbolTable *gst)
 		temp = temp->next;
 	}
 }
+//find duplicate elemets in symbol table given head of symbol table as argument
+int findduplicate(struct gSymbolTable *gst)
+{
+	struct Gsymbol *temp = gst->head;
+	struct Gsymbol *temp2 = gst->head;
+	while (temp != NULL)
+	{
+		temp2 = temp->next;
+		while (temp2 != NULL)
+		{
+			if (strcmp(temp->name, temp2->name) == 0)
+			{
+				return 1;
+			}
+			temp2 = temp2->next;
+		}
+		temp = temp->next;
+	}
+	return 0;
+}
+
 // symbol table functions end

@@ -1,9 +1,22 @@
 decl
 {
-    int a,* b;
+   int arr[5];
+   int n,i;
 }
 begin
-a=10;
-b=&a;
+read(n);
+i=0;
+while(i<5)
+{
+   read(arr[i]);
+   i=i+1;
+}
+if(arr[i]<arr[i+1])
+{
+   write("yayy");
+}
+else
+{
+   write("moonji");
+}
 end
-
