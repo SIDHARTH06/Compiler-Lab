@@ -6,9 +6,25 @@
 	FILE *fp, *withoutld,*targetfile;
 	int count = 2056;
 	int label[1000];
+	int function[1000];
+	int mainv=0;
 %}
 
 %%
+
+("MAIN")([\n])   {
+							if(secondpass) {
+								fprintf(targetfile,"%d\n",mainv);
+							}
+							else {
+								count += 2;
+							}
+					   }
+("MAIN")([:])([\n]) {
+	if(!secondpass) {
+								mainv = count;
+					}
+}
 
 ([L][0-9]+)([\n])   {
 							if(secondpass) {
@@ -30,6 +46,28 @@
 								number[i] = '\0';
 								int label_index = atoi(number);
 								label[label_index] = count;
+							}
+					   }
+([F][0-9]+)([\n])   {
+							if(secondpass) {
+								yytext[0] = '0';
+								int label_index = atoi(yytext);
+								fprintf(targetfile,"%d\n", function[label_index]);
+							}
+							else {
+								count += 2;
+							}
+					   }
+([F][0-9]+)([:])([\n]) { 
+							if(!secondpass) {
+								char number[10];
+								int i = 0;
+								for(int j = 1; yytext[j] != ':'; ++j) {
+									number[i++] = yytext[j];
+								}
+								number[i] = '\0';
+								int label_index = atoi(number);
+								function[label_index]=number;
 							}
 					   }
 [\n]                   {

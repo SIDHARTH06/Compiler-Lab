@@ -1,9 +1,24 @@
 decl
 {
-    int a,* b;
+   int k;
+   int test(int c,int b);
 }
-begin
-a=10;
-b=&a;
-end
-
+int test(int c,int b)
+{
+   ldec
+   int a;
+   eldec
+   return(c);
+}
+main()
+{
+   ldec
+   int a;
+   int b;
+   int c;
+   eldec
+   read(a);
+   write(b);
+   write(c);
+   test(a,b);
+}

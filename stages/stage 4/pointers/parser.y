@@ -93,6 +93,7 @@ program : DECLARATIONS BEGN SLIST ENDT
 }
 		;
 	| BEGN SLIST ENDT{
+				
 				exit(0);
 			}
 	| BEGN ENDT{

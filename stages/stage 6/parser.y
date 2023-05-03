@@ -4,9 +4,9 @@
 	#include "astfunctions.h"
 	#include "astfunctions.c"
 	#include <string.h>
-	#include "symboltable.c"
+	#include "symboltable.c">
 
-	int yylex();
+	int yylex(void);
     int yyerror();
 	regs[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	extern FILE *yyin;
@@ -14,10 +14,8 @@
 	int label=0;
 	struct gSymbolTable *gst;
 	struct lSymbolTable *lst;
-	int gm=4096;
+	int gm=0;
 	int flabel=0;
-	int cb=0;
-	FILE* target_file;
 %}
 %union{
 	struct tnode *no;
@@ -25,8 +23,6 @@
 	int number;
 	struct Gsymbol *Symbol;
 	struct Lsymbol *Lsymbol;
-	struct paramstruct* paramlist;
-	struct arglist* arglist;
 }
 
 %type <no> expr 
@@ -37,8 +33,6 @@
 %type <no> program 
 %type <no> ASSIGNSTMNT 
 %type <no> IDENTIFIER
-%type <no> FNCALLSTMNT
-%type <no> RETURNSTMNT
 %type <no> IFSTMNT WHILESTMNT IFELSESTMNT DOWHILESTMNT BREAKSTMNT CONTINUESTMNT REPEATUNTILSTMNT
 
 
@@ -46,12 +40,13 @@
 %type <name> ID
 %type <name> STRNG
 %type <number> NUM
-%type <number> STR
-%type <Symbol> IDDECL DEC VARLIST
-%type <Lsymbol>  LDECLSTMNT LDECLARATIONS LVARLIST LIDDECL
-%type <arglist> ARGMNTLIST
-%type <Symbol> GDECLBLOCK FDEFBLOCK MAINBLOCK FDEF GDEC FDECNAME
-%type <paramlist> PARAMLIST
+%type <name> STR
+%type <Symbol> IDDECL DECLSTMNT DEC VARLIST DECLARATIONS
+%type <Lsymbol> ARGLIST LDECLSTMNT LDECBLOCK LDECLARATIONS LDECL LDECLARATIONS
+%type <arglist> ARGMNTLIST ARGMNT
+$type <name> FNAME
+%type <Symbol> GDECLBLOCK FDEFBLOCK MAINBLOCK FDEF
+
 
 %token STRNG
 %token ADDRESS
@@ -59,7 +54,7 @@
 %token WRITE 
 %token NUM 
 %token ENDOFLINE 
-%token ASSIGN LDECH ELDECH
+%token ASSIGN 
 %token PLUS MINUS MUL DIV ID MOD
 %token REPEAT 
 %token BREAK 
@@ -67,11 +62,11 @@
 %token UNTIL 
 %token STARTC 
 %token ENDC 
+%token DECL 
 %token INT STR
 %token BEGN ENDT
 %token MAIN
 %token RETURN
-%token DECL
 %type<number> INT
 
 %token IF THEN ELSE WHILE DO  LT GT LE GE EQ NE AND OR NOT
@@ -80,60 +75,30 @@
 %left LT GT LE GE EQ NE
 %left PLUS MINUS
 %left MUL DIV
-%left MOD
+%left MODe
 %%
 
 program : GDECLBLOCK FDEFBLOCK MAINBLOCK
 	{
 		printf("Parsing Complete\n");
-		fclose(target_file);
 	}
 	;
 	| GDECLBLOCK MAINBLOCK
 	{
-		printf("Parsing Complete\n");
-		fclose(target_file);
+		printf("Parsing Complete\n");	
 	}
 	| MAINBLOCK
 	{
-		printf("test");
 		printf("Parsing Complete\n");		
-		fclose(target_file);
 	}
 	;
-GDECLBLOCK: DECL STARTC GDEC ENDC
+GDECLBLOCK: DEC STARTC GDEC ENDC
 {
-	printf("test");
 	$$=$3;
-	gst = ( struct gSymbolTable* ) malloc(sizeof(struct gSymbolTable));
-    gst->head = $3;
-    assignbinding(gst,gm);
-	printglobalsymboltable(gst);
-	if (findduplicate(gst))
-	{
-		yyerror("Duplicate Declaration\n");
-		exit(1);
-	}
-    target_file = fopen("ASSEMBLYCODE.xsm", "w");
-    fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", 0, 2056, 0, 0, 0, 0, 0, 0);
-    fprintf(target_file, "MOV SP, %d\n", 4095);
-    fprintf(target_file, "MOV BP, %d\n", 4096);
-    fprintf(target_file, "PUSH R0\n");
-     while( gm-- > 4096){
-        fprintf(target_file, "PUSH R0\n");
-    }
-
-
-    fprintf(target_file, "CALL MAIN\n");
-
-
-    fprintf(target_file, "MOV R0,\"Exit\"\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "CALL 0\n");
+}
+|
+{
+	$$=NULL;
 }
 ;
 GDEC: GDEC DEC 
@@ -188,27 +153,6 @@ IDDECL: ID
 	}
 	;
 
-FDECNAME: ID '(' PARAMLIST ')'
-{
-	$$=createsymbolnode(gst,$<name>1,INVALIDTYPE,0,0,-1,$3,NULL,flabel++);
-}
-| ID '(' ')'
-{
-	$$=createsymbolnode(gst,$<name>1,INVALIDTYPE,0,0,-1,NULL,NULL,flabel++);
-}
-;
-
-
-PARAMLIST: PARAMLIST ',' TYPE ID
-{
-	$$=joinparamnode($1,createparamnode($<name>4,$3,1,1));
-}
-| TYPE ID
-{
-	$$=createparamnode($<name>2,$1,1,1);
-}
-;
-
 FDEFBLOCK: FDEFBLOCK FDEF
 	{
 		$$=$1;
@@ -218,19 +162,13 @@ FDEFBLOCK: FDEFBLOCK FDEF
 		$$=$1;
 	}
 ;
-FDEF: TYPE ID '(' PARAMLIST ')' STARTC LDECH LDECLARATIONS ELDECH SLIST ENDC
+FDEF: TYPE ID '(' ARGLIST ')' STARTC LDECLARATIONS SLIST ENDC
 {
-	printf("test");
-	struct Gsymbol *temp = lookup(gst,$<name>2);
+	struct Gsymbol *temp = lookup($<name>2);
 	temp->paramlist=$4;
 	struct lSymbolTable *lst = (struct lSymbolTable*)malloc(sizeof(struct lSymbolTable));
-	lst->head=$8;
-	printlocalsymboltable(lst);
-	temp->lsth=lst->head;
-	temp->flabel=flabel;
-	fprintf(target_file, "F%d:\n ",flabel);
-	flabel++;
-	$$=NULL;
+	lst->head=$7;
+	temp->lsth=lst;
 	if(temp==NULL)
 	{
 		printf("Function %s not declared\n",$<name>2);
@@ -250,27 +188,27 @@ FDEF: TYPE ID '(' PARAMLIST ')' STARTC LDECH LDECLARATIONS ELDECH SLIST ENDC
 				{
 					addargtolst(temp->lsth,temp->paramlist);
 					//create activation record
-                    fprintf(target_file , "PUSH BP\n");
-                    fprintf(target_file , "MOV BP, SP\n");
+                    fprintf(fp , "PUSH BP\n");
+                    fprintf(fp , "MOV BP, SP\n");
                     //push reg on stack for lst
-					temp = $8;
+					struct Lsymbol *temp = $7;
 					while(temp!=NULL)
 					{
-						fprintf(target_file, "PUSH R0\n");
+						fprintf(fp, "PUSH R0\n");
 						temp=temp->next;
 					}
-					codeGen($10,target_file,lst);
+					codeGen($8,fp);
                     //pop reg for lst
-					temp = $8;
+					struct Lsymbol *temp = $7;
 					while(temp!=NULL)
 					{
-						fprintf(target_file, "POP R0\n");
+						fprintf(fp, "POP R0\n");
 						temp=temp->next;
 					}
-					fprintf(target_file, "MOV BP, [SP]\n");
-                    fprintf(target_file, "POP R0\n");
-                    fprintf(target_file, "RET\n");
-                    free($8);
+					fprintf(fp, "MOV BP, [SP]\n");
+                    fprintf(fp, "POP R0\n");
+                    fprintf(fp, "RET\n");
+                    free($7);
 				}
 				else if(temp->paramlist==NULL && $4!=NULL)
 				{
@@ -284,7 +222,7 @@ FDEF: TYPE ID '(' PARAMLIST ')' STARTC LDECH LDECLARATIONS ELDECH SLIST ENDC
 				}
 				else
 				{
-					struct paramstruct *temp1 = temp->paramlist;
+					struct Paramstruct *temp1 = temp->paramlist;
 					struct Lsymbol *temp2 = $4;
 					while(temp1!=NULL && temp2!=NULL)
 					{
@@ -303,190 +241,106 @@ FDEF: TYPE ID '(' PARAMLIST ')' STARTC LDECH LDECLARATIONS ELDECH SLIST ENDC
 					}
 					else
 					{
-						addargtolst(lst,temp->paramlist);
+						addargtolst(temp->lsth,temp->paramlist);
 						//create activation record
-                    	fprintf(target_file , "PUSH BP\n");
-                    	fprintf(target_file , "MOV BP, SP\n");
+                    	fprintf(fp , "PUSH BP\n");
+                    	fprintf(fp , "MOV BP, SP\n");
                     	//push reg on stack for lst
-						temp = $8;
+						struct Lsymbol *temp = $7;
 						while(temp!=NULL)
 						{
-							fprintf(target_file, "PUSH R0\n");
+							fprintf(fp, "PUSH R0\n");
 							temp=temp->next;
 						}
-						assignbindinglocal(lst);
-						codeGen($10,target_file,lst);
+						codeGen($8,fp);
                     	//pop reg for lst
-						temp = $8;
+						struct Lsymbol *temp = $7;
 						while(temp!=NULL)
 						{
-							fprintf(target_file, "POP R0\n");
+							fprintf(fp, "POP R0\n");
 							temp=temp->next;
 						}
-						fprintf(target_file, "MOV BP, [SP]\n");
-                    	fprintf(target_file, "POP R0\n");
-                    	fprintf(target_file, "RET\n");
-                    	freelst($8);
+						fprintf(fp, "MOV BP, [SP]\n");
+                    	fprintf(fp, "POP R0\n");
+                    	fprintf(fp, "RET\n");
+                    	freelst($7);
 					}
 				}
 			}
 		}
 	}
 ;
-FDEF: TYPE ID '(' ')' STARTC LDECH LDECLARATIONS ELDECH SLIST ENDC
+MAINBLOCK: BEGN STARTC LDECLARATIONS SLIST ENDC ENDT
 {
-	struct Gsymbol *temp = lookup(gst,$<name>2);
-	temp->paramlist=NULL;
-	struct lSymbolTable *lst = (struct lSymbolTable*)malloc(sizeof(struct lSymbolTable));
-	lst->head=$7;
-	printlocalsymboltable(lst);
-	temp->lsth=lst->head;
-	temp->flabel=flabel;
-	fprintf(target_file, "F%d:\n ",flabel);
-	flabel++;
-	$$=NULL;
-	if(temp==NULL)
-	{
-		printf("Function %s not declared\n",$<name>2);
-		exit(1);
-	}
-	else
-	{
-
-		if(temp->type!=$1)
-			{
-				printf("Function %s return type mismatch\n",$<name>2);
-				exit(1);
-			}
-			else
-			{
-				if(temp->paramlist==NULL)
-				{
-					addargtolst(temp->lsth,temp->paramlist);
-					//create activation record
-                    fprintf(target_file , "PUSH BP\n");
-                    fprintf(target_file , "MOV BP, SP\n");
-                    //push reg on stack for lst
-					temp = $7;
-					while(temp!=NULL)
-					{
-						fprintf(target_file, "PUSH R0\n");
-						temp=temp->next;
-					}
-					codeGen($9,target_file,lst);
-                    //pop reg for lst
-					temp = $7;
-					while(temp!=NULL)
-					{
-						fprintf(target_file, "POP R0\n");
-						temp=temp->next;
-					}
-					fprintf(target_file, "MOV BP, [SP]\n");
-                    fprintf(target_file, "POP R0\n");
-                    fprintf(target_file, "RET\n");
-                    free($7);
-				}
-				else
-				{
-					printf("Function %s parameter mismatch\n",$<name>2);
-					exit(1);
-				}
-			}
-	}
-				
-}
-;
-MAINBLOCK: MAIN '(' ')' STARTC LDECH LDECLARATIONS ELDECH SLIST ENDC
-{
-	check();
-	if(gst==NULL)
-	{
-		target_file = fopen("ASSEMBLYCODE.xsm", "w");
-    fprintf(target_file, "%d\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n", 0, 2056, 0, 0, 0, 0, 0, 0);
-    fprintf(target_file, "MOV SP, %d\n", 4095);
-    fprintf(target_file, "MOV BP, %d\n", 4096);
-    fprintf(target_file, "PUSH R0\n");
-     while( gm-- > 4096){
-        fprintf(target_file, "PUSH R0\n");
-    }
-
-
-    fprintf(target_file, "CALL MAIN\n");
-
-
-    fprintf(target_file, "MOV R0,\"Exit\"\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "PUSH R0\n");
-    fprintf(target_file, "CALL 0\n");
-	}
-	
-	if(target_file==NULL)	
-	{
-		target_file = fopen("ASSEMBLYCODE.xsm", "a");
-	}
     int cb = 1;
-	struct lSymbolTable *lst = (struct lSymbolTable*)malloc(sizeof(struct lSymbolTable));
-	lst->head=$6;
-	printlocalsymboltable(lst);
-    struct Lsymbol* temp1 = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
-	temp1 = $6;
-	if (temp1 == NULL){
-		cb = 1;
-	}
-	else{
-    while (temp1!=NULL){
-		if(temp1->binding==0)
-			break;
-        temp1 = temp1->next;
+    struct lSymbol *temp = $3;
+    while (temp->binding != 0){
+        temp = temp->next;
     }
-    while (temp1 != NULL){
-        temp1->binding = cb;
+    while (temp != NULL){
+        temp->binding = cb;
         cb += 1;
-        temp1 = temp1->next;
+        temp = temp->next;
     }
-	}
-	fprintf(target_file,  "MAIN:\n");
-    fprintf(target_file , "PUSH BP\n");
-    fprintf(target_file , "MOV BP, SP\n");
-	temp1=$8;
-    while (temp1 != NULL)
+	fprintf(fp, "MAIN:\n");
+    fprintf(fp , "PUSH BP\n");
+    fprintf(fp , "MOV BP, SP\n");
+    struct lSymbol *temp = $3;
+    while (temp != NULL)
     {
-        fprintf(target_file, "PUSH R0\n");
-        temp1 = temp1->next;
+        fprintf(fp, "PUSH R0\n");
+        temp = temp->next;
     }
-    codeGen($8,target_file,lst);
-    temp1 = lst->head;
-    while (temp1 != NULL)
+    codeGen($4,fp);
+    struct lSymbol *temp = $3;
+    while (temp != NULL)
     {
-        fprintf(target_file, "POP R0\n");
-        temp1 = temp1->next;
+        fprintf(fp, "POP R0\n");
+        temp = temp->next;
     }
 
-    fprintf(target_file, "MOV BP, [SP]\n");
-    fprintf(target_file, "POP R0\n");
-	fprintf(target_file, "RET\n");
+    fprintf(fp, "MOV BP, [SP]\n");
+    fprintf(fp, "POP R0\n");
+	fprintf(fp, "RET\n");
     freelst(lst);
 }
+FDECNAME: ID '(' ARGLIST ')'
+{
+	$$=createsymbolnode(gst,$<name>2,INVALIDTYPE,0,0,-1,-1,$3,NULL,flabel++);
+}
 ;
 
+
+ARGLIST: ARGLIST ',' TYPE ID
+{
+	$$=joinparamnode($1,$4);
+}
+| TYPE ID
+{
+	$$=createparamnode($2,$1);
+}
+|
+{
+	$$=NULL;
+}
+;
 
 LDECLARATIONS: LDECLARATIONS LDECLSTMNT
 	{
-		struct Lsymbol *temp = $1;
 		$$ = joinnodel($1,$2);
 	}
 	| LDECLSTMNT
 	{
 		$$ = $1;
 	}
+	| 
+	{
+		$$ = NULL;
+	}
 ;
 
 LDECLSTMNT: TYPE LVARLIST ENDOFLINE 
 	{
-		printf("test");
 		struct Lsymbol* temp = $2;
         while(temp!=NULL)
 		{
@@ -498,31 +352,28 @@ LDECLSTMNT: TYPE LVARLIST ENDOFLINE
 	;
 LVARLIST: LVARLIST ',' LIDDECL
 	{
-		printf("test");
 		$$=joinnodel($1,$3);
 	}
 	| LIDDECL
 	{
-		printf("test");
 		$$=$1;
 	}
 	;
 LIDDECL: ID 
 	{
-		printf("test");
-		$$=createlocalsymbolnode($<name>1,INVALIDTYPE,1,1,0);
+		$$=createlocalsymbolnode(lst,$<name>1,INVALIDTYPE,1,1);
 	}
 	| ID '[' NUM ']' 
 	{
-		$$=createlocalsymbolnode($<name>1,INVALIDTYPE,$<number>3,$<number>3,0);
+		$$=createlocalsymbolnode(lst,$<name>1,INVALIDTYPE,$<number>3,$<number>3);
 	}
 	| ID '[' NUM ']' '[' NUM ']'	
 	{
-		$$ = createlocalsymbolnode($<name>1,INVALIDTYPE,($<number>3*$<number>6),$<number>3,0);
+		$$ = createlocalsymbolnode(lst,$<name>1,INVALIDTYPE,($<number>3*$<number>6),$<number>3);
 	}
 	| MUL ID 
 	{
-		$$=createlocalsymbolnode($<name>2,INVALIDTYPE,1,0,0);
+		$$=createlocalsymbolnode(lst,$<name>2,INVALIDTYPE,1,0);
 	}
 	;
 
@@ -691,33 +542,25 @@ expr : expr PLUS expr	{$$ = createTree(-1,INTTYPE,"+",MATHOPNODE,$1,$3);}
 
 ARGMNTLIST : ARGMNTLIST ',' expr
 	{
-		check();
 		$$=joinargnode($1,$3);
 	}
 	| expr
 	{
-		$$ = createargnode($1);
+		$$ = createargnode($1)
 	}
 	;
 
-FNCALLSTMNT : ID '(' ARGMNTLIST ')'
+FNCALLSTMNT : FNAME '(' ARGMNTLIST ')'
 {
-	struct tnode *temp = createTree(-1,INVALIDTYPE,$<name>1,FNNODE,$3,NULL);
-	temp->paramlist=lookup(gst,temp->varname)->paramlist;
+	struct *tnode temp = createTree(-1,INVALIDTYPE,$<name>1,FNNODE,$3,NULL);
 	temp->arglist=$3;
-	check();
-	if(checkargissameasparam(temp)==0)
-	{
-		yyerror("Arguments do not match with parameters");
-		exit(1);
-	}
 	$$=temp;
 }
 ;
 IDENTIFIER: ID 
 	{
 		struct tnode* temp =createTree(-1,INVALIDTYPE,$<name>1,VARNODE,NULL,NULL);
-		//temp->type=findtype(gst,temp->varname);
+		temp->type=findtype(gst,temp->varname);
 		$$=temp;
 	}
 	| ID '[' expr ']'
@@ -749,7 +592,7 @@ IDENTIFIER: ID
 		struct tnode* temp1 =createTree(-1,temp->type,NULL,PTRNODE,temp,NULL);
 		$$=temp1;
 	}
-;
+
 %%
 
 yyerror(char const *s)
@@ -762,9 +605,9 @@ int main(int argc, char* argv[])
 {
 	if(argc > 1)
  	{
-  		FILE *target_file = fopen(argv[1], "r");
-  		if(target_file)
-   			yyin = target_file;
+  		FILE *fp = fopen(argv[1], "r");
+  		if(fp)
+   			yyin = fp;
  	}
 	yyparse();
 	return 0;

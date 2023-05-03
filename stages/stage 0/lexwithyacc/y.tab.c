@@ -1311,7 +1311,7 @@ yyreduce:
 
   case 3:
 #line 19 "in2post.y"
-    {printf("+ ");}
+    {printf("gautham");}
     break;
 
   case 4:
